@@ -1,0 +1,18 @@
+# Typst
+.typst/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.pdf
+*.svg
+*.png
