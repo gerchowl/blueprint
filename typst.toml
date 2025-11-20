@@ -1,0 +1,11 @@
+[package]
+name = "blueprint"
+version = "0.1.0"
+entrypoint = "src/lib.typ"
+authors = ["Your Name"]
+license = "MIT"
+description = "A Typst package for creating hierarchical technical diagrams."
+
+[dependencies]
+cetz = "0.3.2"
+

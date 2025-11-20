@@ -1,0 +1,177 @@
+/// Connector system for component interfaces
+#import "@preview/cetz:0.3.2": *
+#import "utils.typ": *
+#import "style.typ": *
+
+/// Import component-registry for connector access
+#let component-registry = state("component-registry", (:))
+
+/// Connector registry
+#let connector-registry = state("connector-registry", (:))
+
+/// Create a connector
+#let connector(name, position, group: none, count: 1, group-display: "auto", group-label: none, style: none) = {
+  let conn = (
+    name: name,
+    position: position,
+    group: group,
+    count: count,
+    group-display: group-display,
+    group-label: group-label,
+    style: style,
+    index: none, // For individual connectors in a group
+  )
+
+  // Register connector
+  if group != none {
+    connector-registry.update(d => {
+      let group-key = str(group) + "-" + str(name)
+      if group-key not in d {
+        d.insert(group-key, ())
+      }
+      let group-conns = d.at(group-key)
+      group-conns.push(conn)
+      d.at(group-key) = group-conns
+      d
+    })
+  }
+
+  conn
+}
+
+/// Render connector based on display mode
+#let render-connector(connector, display-mode) = {
+  let style = connector.style
+  let pos = connector.position
+
+  if connector.group != none {
+    // Grouped connector
+    if display-mode == "high-level" or (display-mode == "auto" and connector.count > 5) {
+      render-connector-group-collapsed(connector)
+    } else if display-mode == "expanded" or connector.group-display == "expanded" {
+      render-connector-group-expanded(connector)
+    } else {
+      render-connector-group-collapsed(connector)
+    }
+  } else {
+    // Individual connector
+    render-connector-individual(connector)
+  }
+}
+
+/// Render individual connector
+#let render-connector-individual(conn) = {
+  let (x, y) = if type(conn.position) == array { conn.position } else { (conn.position.x, conn.position.y) }
+  let style = conn.style
+  let size = style.at("size", default: 4pt)
+  let shape = style.at("shape", default: "circle")
+  let fill = style.at("fill", default: white)
+  let stroke = style.at("stroke", default: 1pt + black)
+
+  if shape == "circle" {
+    cetz.draw.circle((x, y), radius: size, fill: fill, stroke: stroke)
+  } else {
+    cetz.draw.rect(
+      (x - size, y - size),
+      (x + size, y + size),
+      fill: fill,
+      stroke: stroke,
+    )
+  }
+}
+
+/// Render connector group collapsed
+#let render-connector-group-collapsed(conn) = {
+  let (x, y) = if type(conn.position) == array { conn.position } else { (conn.position.x, conn.position.y) }
+  let label = if conn.group-label != none {
+    conn.group-label
+  } else {
+    "[1.." + str(conn.count) + "]"
+  }
+
+  // Draw bracket notation
+  cetz.draw.line((x - 5pt, y), (x - 2pt, y), stroke: 1pt + black)
+  cetz.draw.line((x + 2pt, y), (x + 5pt, y), stroke: 1pt + black)
+  cetz.draw.line((x - 2pt, y - 2pt), (x - 2pt, y + 2pt), stroke: 1pt + black)
+  cetz.draw.line((x + 2pt, y - 2pt), (x + 2pt, y + 2pt), stroke: 1pt + black)
+
+  // Label
+  cetz.draw.content((x, y - 8pt), [*#label*])
+}
+
+/// Render connector group expanded
+#let render-connector-group-expanded(conn) = {
+  let (x, y) = if type(conn.position) == array { conn.position } else { (conn.position.x, conn.position.y) }
+  let spacing = 8pt
+  let start-x = x - (conn.count - 1) * spacing / 2
+
+  for i in range(conn.count) {
+    let conn-x = start-x + i * spacing
+    render-connector-individual((
+      name: conn.name,
+      position: (conn-x, y),
+      style: conn.style,
+      index: i,
+    ))
+  }
+}
+
+/// Get connector by name and index from a component
+#let get-connector(component-name, connector-name, index: none) = {
+  let comp = component-registry.get().at(component-name, default: none)
+  if comp == none {
+    error("Component not found: " + str(component-name))
+  }
+
+  for conn in comp.connectors {
+    if conn.name == connector-name {
+      if index != none and conn.group != none {
+        // Return specific instance from group
+        return conn + (position: calculate-connector-position(conn, index), index: index)
+      } else {
+        return conn
+      }
+    }
+  }
+  error("Connector " + str(connector-name) + " not found in component " + str(component-name))
+}
+
+/// Calculate position of a specific connector in a group
+#let calculate-connector-position(conn, index) = {
+  let (x, y) = if type(conn.position) == array { conn.position } else { (conn.position.x, conn.position.y) }
+  let spacing = 8pt
+  let start-x = x - (conn.count - 1) * spacing / 2
+  let conn-x = start-x + index * spacing
+  (conn-x, y)
+}
+
+/// Calculate bounds for all connectors
+#let calculate-connector-bounds(connectors, content-bounds) = {
+  let min-x = content-bounds.x
+  let min-y = content-bounds.y
+  let max-x = content-bounds.x + content-bounds.width
+  let max-y = content-bounds.y + content-bounds.height
+  let has-connectors = false
+
+  for conn in connectors {
+    has-connectors = true
+    let (x, y) = if type(conn.position) == array { conn.position } else { (conn.position.x, conn.position.y) }
+    let size = conn.style.at("size", default: 4pt)
+    min-x = calc.min(min-x, x - size)
+    min-y = calc.min(min-y, y - size)
+    max-x = calc.max(max-x, x + size)
+    max-y = calc.max(max-y, y + size)
+  }
+
+  if not has-connectors {
+    content-bounds // If no connectors, bounds are just content bounds
+  } else {
+    (
+      x: min-x,
+      y: min-y,
+      width: max-x - min-x,
+      height: max-y - min-y,
+    )
+  }
+}
+
