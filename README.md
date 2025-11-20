@@ -23,7 +23,7 @@ A comprehensive Typst package for creating hierarchical technical component diag
 
 ```typst
 #import "@preview/blueprint:0.1.0": *
-#import "@preview/cetz:0.3.2": *
+#import "@preview/cetz:0.4.2": *
 
 // Create a simple component
 #let my-component = component(
@@ -41,6 +41,55 @@ A comprehensive Typst package for creating hierarchical technical component diag
 #place-component("processor", (5cm, 5cm))
 #render(my-component)
 ```
+
+## Development
+
+This project uses:
+- **Just** for task automation
+- **Tytanic** for testing (installed locally)
+- **Tidy** for documentation generation
+
+### Setup
+
+```bash
+# Install Just (if not already installed)
+cargo install just
+# or
+brew install just
+
+# Install local dependencies
+just install
+```
+
+The `just install` command will:
+1. Install **Tytanic** using `cargo install` (pinned to v0.2.1)
+2. Copy the Tytanic binary to `bin/tt`
+3. Note: **Tidy** will be auto-downloaded by Typst when first used
+
+### Available Tasks
+
+```bash
+just                # List all available tasks
+just install        # Install local dependencies (Tytanic, Tidy via utpm)
+just test           # Run all tests using local Tytanic
+just test-update    # Update test reference images
+just docs           # Generate documentation
+just docs-watch     # Watch documentation for changes
+just examples       # Compile all examples
+just check          # Check package structure
+just clean          # Clean build artifacts
+just clean-tools    # Clean local binaries (keeps source)
+just build          # Build everything (check + test + docs)
+```
+
+### Local Tools
+
+- **Tytanic**: Built locally in `.tools/tytanic/`, binary in `bin/tt`
+- **Tidy**: Installed locally via utpm in `.typst/packages/`
+
+To use local tools, either:
+1. Add `bin/` to your PATH: `export PATH=$PWD/bin:$PATH`
+2. Or use the justfile tasks which automatically use local binaries
 
 ## Core Concepts
 
@@ -74,6 +123,8 @@ Edges connect components via connectors:
 - **Anchors**: `(left|center|right, top|center|bottom)`
 
 ## API Reference
+
+See `docs/manual.typ` for comprehensive API documentation.
 
 ### Components
 
@@ -210,6 +261,8 @@ Edges connect components via connectors:
 
 ## Examples
 
+See the `examples/` directory for more examples.
+
 ### Simple Component
 
 ```typst
@@ -278,7 +331,34 @@ Edges connect components via connectors:
 )
 ```
 
+## Testing
+
+Tests are located in the `tests/` directory. Run tests with:
+
+```bash
+just test
+```
+
+Update test reference images with:
+
+```bash
+just test-update
+```
+
+## Documentation
+
+Generate documentation with:
+
+```bash
+just docs
+```
+
+Watch documentation for changes:
+
+```bash
+just docs-watch
+```
+
 ## License
 
 MIT
-

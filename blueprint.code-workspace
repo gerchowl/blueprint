@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../typst-fletcher"
+		},
+		{
+			"path": "../cetz"
+		}
+	],
+	"settings": {}
+}

@@ -1,5 +1,5 @@
 /// Connector system for component interfaces
-#import "@preview/cetz:0.3.2": *
+#import "deps.typ": cetz
 #import "utils.typ": *
 #import "style.typ": *
 
@@ -156,7 +156,7 @@
   for conn in connectors {
     has-connectors = true
     let (x, y) = if type(conn.position) == array { conn.position } else { (conn.position.x, conn.position.y) }
-    let size = conn.style.at("size", default: 4pt)
+    let size = if conn.style != none { conn.style.at("size", default: 4pt) } else { 4pt }
     min-x = calc.min(min-x, x - size)
     min-y = calc.min(min-y, y - size)
     max-x = calc.max(max-x, x + size)

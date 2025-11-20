@@ -1,6 +1,6 @@
 /// Nested canvas system for hierarchical diagrams
 /// Each component has its own coordinate system
-#import "@preview/cetz:0.3.2": *
+#import "deps.typ": cetz
 #import "utils.typ": *
 
 /// Canvas registry to track nested canvases
@@ -21,12 +21,14 @@
     bounds: (x: 0pt, y: 0pt, width: 0pt, height: 0pt),
   )
 
+  // Update registry - use return to avoid joining content with dictionary
+  // State update still executes and updates state, but content is discarded
   canvas-registry.update(d => {
     d.insert(name, canvas-info)
     d
   })
-
-  canvas-info
+  
+  return canvas-info
 }
 
 /// Get canvas by name

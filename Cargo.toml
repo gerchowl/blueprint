@@ -1,0 +1,18 @@
+# Development tools for blueprint Typst package
+# This Cargo.toml is only for managing development tools
+# The actual Typst package is defined in typst.toml
+
+[package]
+name = "blueprint-dev-tools"
+version = "0.1.0"
+edition = "2021"
+description = "Development tools for blueprint Typst package"
+
+# Development dependencies - tools we use for development
+[dependencies]
+
+# Tytanic - Typst test runner
+# Pin to specific version for reproducibility
+# Update version here and justfile will use it
+tytanic = { version = "0.3.1", default-features = false }
+

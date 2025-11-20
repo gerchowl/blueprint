@@ -7,5 +7,5 @@ license = "MIT"
 description = "A Typst package for creating hierarchical technical diagrams."
 
 [dependencies]
-cetz = "0.3.2"
+cetz = "0.4.2"
 

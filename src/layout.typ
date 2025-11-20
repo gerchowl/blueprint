@@ -1,6 +1,6 @@
 /// Layout and positioning system
 /// Supports absolute and relative positioning with reference objects
-#import "@preview/cetz:0.3.2": *
+#import "deps.typ": cetz
 #import "utils.typ": *
 #import "canvas.typ": *
 
@@ -103,7 +103,7 @@
   let has-content = false
 
   for item in content {
-    let item-bounds = if type(item) == dict {
+    let item-bounds = if type(item) == "dictionary" {
       if "bounds" in item {
         item.bounds
       } else if "shape" in item {

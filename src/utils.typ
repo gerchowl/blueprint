@@ -1,5 +1,5 @@
 /// Utility functions for hierarchical diagrams
-#import "@preview/cetz:0.3.2": *
+#import "deps.typ": cetz
 
 /// Convert anchor string to numeric values
 /// anchor: (left|center|right, top|center|bottom)

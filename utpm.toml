@@ -1,0 +1,6 @@
+# utpm configuration for local Typst package management
+
+[packages]
+# Local packages will be installed here
+tidy = "*"
+

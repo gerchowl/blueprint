@@ -1,5 +1,5 @@
 /// Edge system with styles and routing
-#import "@preview/cetz:0.3.2": *
+#import "deps.typ": cetz
 #import "utils.typ": *
 #import "style.typ": *
 #import "connector.typ": get-connector, calculate-connector-position

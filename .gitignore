@@ -16,3 +16,17 @@ Thumbs.db
 *.pdf
 *.svg
 *.png
+
+# Local tools and binaries
+.tools/
+bin/
+*.local
+.cargo/
+target/
+Cargo.lock
+
+# Test outputs (Tytanic auto-generated)
+tests/*/out/
+tests/*/diff/
+# Reference images should be committed
+# tests/*/ref/
