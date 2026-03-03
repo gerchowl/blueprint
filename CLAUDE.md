@@ -63,8 +63,9 @@ docs/manual.typ              # API reference (generated via Tidy)
 
 - **Framework:** Tytanic (visual regression, installed to `bin/tt`)
 - **Test location:** `tests/<name>/test.typ` with reference images in `tests/<name>/ref/`
-- **4 passing tests:** primitives-rect, primitives-circle, primitives-ellipse, color-variations
-- **Disabled tests** (in `_component-tests-disabled/`): blocked by `state().get()` requiring `context` expressions
+- **Reference images:** Not yet generated — run `just test-update` to create baselines
+- **4 active tests:** primitives-rect, primitives-circle, primitives-ellipse, color-variations (primitives-only, no state issues)
+- **4 disabled tests** (in `_component-tests-disabled/`): component-borders-rect, component-borders-circle, component-borders-ellipse, nested-components — blocked by `place-component()` requiring `context` expressions. Still relevant to current API; re-enable once `state().get()` issue is resolved.
 
 ## Dependencies
 

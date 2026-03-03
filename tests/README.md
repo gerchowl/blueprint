@@ -11,14 +11,15 @@ Each test file focuses on a specific feature:
 - `primitives-circle/` - Circle primitives with various styles
 - `primitives-ellipse/` - Ellipse primitives with various styles
 
-### Component Border Tests
+### Color Tests
+- `color-variations/` - Color palettes and transparency tests
+
+### Disabled Tests (`_component-tests-disabled/`)
+These tests use `place-component()` which requires `context` expressions. They match the current API and should be re-enabled once the `state().get()` issue is resolved.
 - `component-borders-rect/` - Components with rectangular borders (including rounded corners)
 - `component-borders-circle/` - Components with circular borders
 - `component-borders-ellipse/` - Components with elliptical borders
-
-### Advanced Tests
 - `nested-components/` - Components containing multiple primitives
-- `color-variations/` - Color palettes and transparency tests
 
 ## DRY Principles
 
@@ -82,15 +83,19 @@ just test-update
 
 ## Test Coverage
 
-**Passing Tests (4/4):**
-- ✅ Rectangle primitives with radius, colors, strokes
-- ✅ Circle primitives with various colors and sizes
-- ✅ Ellipse primitives with various radii
-- ✅ Color variations and transparency
+**Active Tests (4):**
+- primitives-rect — Rectangle primitives with radius, colors, strokes
+- primitives-circle — Circle primitives with various colors and sizes
+- primitives-ellipse — Ellipse primitives with various radii
+- color-variations — Color palettes and transparency
 
-**Disabled Tests (blocked by state management issue):**
-- 🚧 Component borders (rect/circle/ellipse shapes) - moved to `_component-tests-disabled/`
-- 🚧 Nested components - moved to `_component-tests-disabled/`
+Note: Reference images (`ref/` dirs) have not been generated yet. Run `just test-update` to create baselines.
+
+**Disabled Tests (in `_component-tests-disabled/`, blocked by state management):**
+- component-borders-rect — Components with rectangular borders
+- component-borders-circle — Components with circular borders
+- component-borders-ellipse — Components with elliptical borders
+- nested-components — Components containing multiple primitives
 
 **Not Yet Implemented:**
 - ⏳ Connectors
