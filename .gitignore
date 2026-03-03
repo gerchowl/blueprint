@@ -30,3 +30,9 @@ tests/*/out/
 tests/*/diff/
 # Reference images should be committed
 # tests/*/ref/
+
+# Claude Code local files (settings.local.json and worktrees are personal)
+.claude/settings.local.json
+.claude/worktrees/
+.claude/agent-memory-local/
+CLAUDE.local.md
