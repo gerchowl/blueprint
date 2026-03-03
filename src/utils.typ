@@ -5,8 +5,8 @@
 /// anchor: (left|center|right, top|center|bottom)
 #let anchor-to-offset(anchor) = {
   let (h, v) = if type(anchor) == array { anchor } else { (anchor, anchor) }
-  let h-offset = if h == "left" { 0.0 } else if h == "center" { 0.5 } else if h == "right" { 1.0 } else { 0.5 }
-  let v-offset = if v == "top" { 0.0 } else if v == "center" { 0.5 } else if v == "bottom" { 1.0 } else { 0.5 }
+  let h-offset = if h == "left" or h == left { 0.0 } else if h == "center" { 0.5 } else if h == "right" or h == right { 1.0 } else { 0.5 }
+  let v-offset = if v == "top" or v == top { 0.0 } else if v == "center" { 0.5 } else if v == "bottom" or v == bottom { 1.0 } else { 0.5 }
   (h-offset, v-offset)
 }
 
@@ -17,10 +17,42 @@
   else { (0pt, 0pt) }
 }
 
-/// Calculate bounding box from content
-#let calculate-bounds(content) = {
-  // Placeholder - will be implemented with cetz bounds calculation
-  (x: 0pt, y: 0pt, width: 0pt, height: 0pt)
+/// Calculate bounding box from an array of items that have bounds
+#let calculate-bounds(items) = {
+  let min-x = 0pt
+  let min-y = 0pt
+  let max-x = 0pt
+  let max-y = 0pt
+  let has-items = false
+
+  for item in items {
+    let item-bounds = if type(item) == dictionary and "bounds" in item {
+      item.bounds
+    } else {
+      none
+    }
+
+    if item-bounds != none {
+      if not has-items {
+        min-x = item-bounds.x
+        min-y = item-bounds.y
+        max-x = item-bounds.x + item-bounds.width
+        max-y = item-bounds.y + item-bounds.height
+        has-items = true
+      } else {
+        min-x = calc.min(min-x, item-bounds.x)
+        min-y = calc.min(min-y, item-bounds.y)
+        max-x = calc.max(max-x, item-bounds.x + item-bounds.width)
+        max-y = calc.max(max-y, item-bounds.y + item-bounds.height)
+      }
+    }
+  }
+
+  if not has-items {
+    (x: 0pt, y: 0pt, width: 0pt, height: 0pt)
+  } else {
+    (x: min-x, y: min-y, width: max-x - min-x, height: max-y - min-y)
+  }
 }
 
 /// Check if value is none or auto
@@ -46,4 +78,3 @@
   let len = vec-len(v)
   if len > 0 { vec-scale(v, 1.0 / len) } else { (0, 0) }
 }
-

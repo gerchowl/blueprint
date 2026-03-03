@@ -1,6 +1,6 @@
 # Blueprint Test Suite
 
-This directory contains comprehensive tests for the unified model where primitives are minimal components.
+This directory contains comprehensive visual regression tests for Blueprint.
 
 ## Test Structure (DRY & SOLID)
 
@@ -14,12 +14,21 @@ Each test file focuses on a specific feature:
 ### Color Tests
 - `color-variations/` - Color palettes and transparency tests
 
-### Disabled Tests (`_component-tests-disabled/`)
-These tests use `place-component()` which requires `context` expressions. They match the current API and should be re-enabled once the `state().get()` issue is resolved.
+### Component Tests
 - `component-borders-rect/` - Components with rectangular borders (including rounded corners)
 - `component-borders-circle/` - Components with circular borders
 - `component-borders-ellipse/` - Components with elliptical borders
 - `nested-components/` - Components containing multiple primitives
+
+### Feature Tests
+- `component-connectors/` - Individual, grouped, and custom-styled connectors
+- `component-inheritance/` - Component extension via `component-extend()`
+- `edge-routing/` - Edge routing modes (direct, rectangular, manhattan) and arrow marks
+- `render-modes/` - Detailed, collapsed, and high-level rendering modes
+- `styles-and-themes/` - Style creation, inheritance, and edge styles
+
+### Legacy (`_component-tests-disabled/`)
+Original test versions that used the old state-based API. Kept for reference only.
 
 ## DRY Principles
 
@@ -30,12 +39,6 @@ Each test file uses:
 
 Example:
 ```typst
-// Instead of:
-#let rect1 = primitive-rect((0cm, 0pt), (2cm, 1cm), fill: red.lighten(80%), stroke: 2pt + red)
-#let rect2 = primitive-rect((3cm, 0pt), (2cm, 1cm), fill: blue.lighten(80%), stroke: 1pt + blue)
-// ... many more
-
-// We use:
 #let test-cases = ((0cm, red, 2pt), (3cm, blue, 1pt), ...)
 #for (x, color, stroke) in test-cases {
   let rect = primitive-rect((x, 0pt), (2cm, 1cm), fill: color.lighten(80%), stroke: stroke + color)
@@ -48,8 +51,8 @@ Example:
 ### Single Responsibility
 Each test file tests ONE specific feature
 
-###Open/Closed
-Tests are open for extension (add new test cases to arrays), closed for modification (don't change test structure)
+### Open/Closed
+Tests are open for extension (add new test cases to arrays), closed for modification
 
 ### Liskov Substitution
 Primitives and components can be used interchangeably (unified model)
@@ -59,14 +62,6 @@ Tests only import what they need from exports.typ
 
 ### Dependency Inversion
 Tests depend on abstractions (blueprint API) not implementations
-
-## Known Issue
-
-**State Management**: Tests using `place-component()` currently fail with "can only be used when context is known". This is a pre-existing issue separate from the unified model implementation and needs to be fixed by:
-1. Wrapping state access in `context` expressions
-2. Or restructuring to use single canvas approach (as discussed)
-
-Tests that only use primitives work perfectly and demonstrate the unified model.
 
 ## Running Tests
 
@@ -83,22 +78,21 @@ just test-update
 
 ## Test Coverage
 
-**Active Tests (4):**
+**Active Tests (13):**
 - primitives-rect — Rectangle primitives with radius, colors, strokes
 - primitives-circle — Circle primitives with various colors and sizes
 - primitives-ellipse — Ellipse primitives with various radii
 - color-variations — Color palettes and transparency
-
-Note: Reference images (`ref/` dirs) have not been generated yet. Run `just test-update` to create baselines.
-
-**Disabled Tests (in `_component-tests-disabled/`, blocked by state management):**
 - component-borders-rect — Components with rectangular borders
 - component-borders-circle — Components with circular borders
 - component-borders-ellipse — Components with elliptical borders
 - nested-components — Components containing multiple primitives
+- component-connectors — Individual and grouped connectors, custom styles
+- component-inheritance — Component extension and inheritance chains
+- edge-routing — Direct, rectangular, manhattan routing with arrow marks
+- render-modes — Detailed, collapsed, high-level rendering
+- styles-and-themes — Style creation, inheritance, edge styles
 
 **Not Yet Implemented:**
-- ⏳ Connectors
-- ⏳ Edges
-- ⏳ Positioning/placement
-
+- Relative positioning tests
+- Complex multi-component diagrams with edges between components

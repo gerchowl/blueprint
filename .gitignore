@@ -1,5 +1,6 @@
 # Typst
 .typst/
+.typst-packages/
 
 # IDE
 .vscode/
@@ -15,7 +16,9 @@ Thumbs.db
 # Build artifacts
 *.pdf
 *.svg
+# Ignore PNGs globally except test reference images
 *.png
+!tests/*/ref/*.png
 
 # Local tools and binaries
 .tools/

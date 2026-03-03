@@ -45,27 +45,32 @@ docs/manual.typ              # API reference (generated via Tidy)
 
 ## Architecture
 
+- **Stateless design:** All factory functions are pure — they return plain dictionaries with no side effects
 - **Unified model:** Primitives are "minimal components" with the same interface (`bounds`, `render()`, `get-anchor()`, `is-primitive`)
-- **Registry pattern:** Global `state()` registries for components, connectors, canvases, styles, edges, positioned objects
 - **Factory functions:** `component()`, `connector()`, `edge-style()`, `primitive-rect/circle/ellipse()` return dictionary objects
-- **State updates:** Use `.update(d => { ...; d })` and `.get()`. Use `return` to avoid joining state update content with return values.
+- **Pure placement:** `place-component(comp, position)` returns an updated component dict (no state mutation)
+- **Rendering:** `render(comp, mode:)` produces CeTZ content; modes: `"detailed"`, `"collapsed"`, `"high-level"`
 
 ## Key Conventions
 
-- **Naming:** `kebab-case` for everything (functions, variables, registries)
+- **Naming:** `kebab-case` for everything (functions, variables)
 - **Doc comments:** `///` for public API, `//` for implementation notes
 - **Imports in source:** `#import "deps.typ": cetz` (relative)
 - **Imports in tests:** `#import "/src/exports.typ" as blueprint`
 - **Imports in examples:** `#import "../src/lib.typ" as blueprint`
-- **Error handling:** `error()` for invalid args; validate with `.at(key, default: none)` then check `none`
+- **Error handling:** `panic()` for invalid args; validate with `.at(key, default: none)` then check `none`
+- **No global state:** Functions do not use `state()` registries — all data flows through function arguments and return values
 
 ## Testing
 
 - **Framework:** Tytanic (visual regression, installed to `bin/tt`)
 - **Test location:** `tests/<name>/test.typ` with reference images in `tests/<name>/ref/`
-- **Reference images:** Not yet generated — run `just test-update` to create baselines
-- **4 active tests:** primitives-rect, primitives-circle, primitives-ellipse, color-variations (primitives-only, no state issues)
-- **4 disabled tests** (in `_component-tests-disabled/`): component-borders-rect, component-borders-circle, component-borders-ellipse, nested-components — blocked by `place-component()` requiring `context` expressions. Still relevant to current API; re-enable once `state().get()` issue is resolved.
+- **13 active tests:** All passing with reference images
+  - **Primitives:** primitives-rect, primitives-circle, primitives-ellipse
+  - **Colors:** color-variations
+  - **Components:** component-borders-rect, component-borders-circle, component-borders-ellipse, nested-components
+  - **Features:** component-connectors, component-inheritance, edge-routing, render-modes, styles-and-themes
+- **Legacy disabled tests** (in `_component-tests-disabled/`): Original versions that used the old state-based API. Kept for reference only.
 
 ## Dependencies
 
@@ -77,10 +82,8 @@ docs/manual.typ              # API reference (generated via Tidy)
 
 ## Known Issues
 
-- `place-component()` uses `state().get()` which requires `context` expressions — blocks component tests
-- `calculate-bounds()` in `utils.typ` is a placeholder returning zero bounds
-- Arrow marks/decorations in edge rendering are TODO
 - No code formatter or CI/CD pipeline configured
+- Canvas parent-chain walk (`get-absolute-position`) has no cycle detection
 
 ## Build Artifacts (git-ignored)
 

@@ -3,17 +3,10 @@
 #import "utils.typ": *
 #import "style.typ": *
 #import "connector.typ": get-connector, calculate-connector-position
-#import "canvas.typ": get-absolute-position
 
-/// Import component-registry
-#let component-registry = state("component-registry", (:))
-
-/// Edge style registry
-#let edge-style-registry = state("edge-style-registry", (:))
-
-/// Define an edge style
+/// Define an edge style (pure function, returns a dict)
 #let edge-style(name, stroke: 1pt + black, marks: "->", routing: "direct", dash: none, decorations: none) = {
-  let style = (
+  (
     name: name,
     stroke: stroke,
     marks: marks,
@@ -21,17 +14,7 @@
     dash: dash,
     decorations: decorations,
   )
-
-  edge-style-registry.update(d => {
-    d.insert(name, style)
-    d
-  })
-
-  style
 }
-
-/// Get edge style by name
-#let get-edge-style(name) = edge-style-registry.get().at(name, default: none)
 
 /// Route edge directly (straight line)
 #let route-direct(from, to) = {
@@ -42,28 +25,19 @@
 #let route-rectangular(from, to) = {
   let (fx, fy) = from
   let (tx, ty) = to
-
-  // Simple L-shaped routing: go horizontal first, then vertical
-  let mid-x = tx
-  let mid-y = fy
-
-  ((fx, fy), (mid-x, mid-y), (tx, ty))
+  ((fx, fy), (tx, fy), (tx, ty))
 }
 
 /// Route edge with Manhattan routing (smart rectangular)
 #let route-manhattan(from, to) = {
   let (fx, fy) = from
   let (tx, ty) = to
-
-  // Choose better L-shape based on distance
   let dx = calc.abs(tx - fx)
   let dy = calc.abs(ty - fy)
 
   if dx > dy {
-    // Go horizontal first
     ((fx, fy), (tx, fy), (tx, ty))
   } else {
-    // Go vertical first
     ((fx, fy), (fx, ty), (tx, ty))
   }
 }
@@ -83,7 +57,7 @@
     route-manhattan(from, to)
   } else if routing-type == "manual" {
     if waypoints == none {
-      error("Manual routing requires waypoints")
+      panic("Manual routing requires waypoints")
     }
     route-manual(waypoints)
   } else {
@@ -91,116 +65,142 @@
   }
 }
 
-/// Draw edge with style
+/// Draw an arrowhead at a point facing a direction
+/// to: the tip of the arrow
+/// from: the point the arrow is coming from (used to compute direction)
+/// size: arrowhead size
+/// stroke-style: stroke for the arrowhead
+#let draw-arrowhead(from, to, size: 6pt, fill: black, stroke-style: none) = {
+  let (fx, fy) = from
+  let (tx, ty) = to
+  // Convert to pt floats to allow multiplication
+  let dx = (tx - fx) / 1pt
+  let dy = (ty - fy) / 1pt
+  let len = calc.sqrt(dx * dx + dy * dy)
+  if len == 0 { return }
+
+  // Unit direction vector (towards tip)
+  let ux = dx / len
+  let uy = dy / len
+
+  // Perpendicular vector
+  let px = -uy
+  let py = ux
+
+  // Arrow tip is at (tx, ty)
+  let half = (size / 1pt) * 0.4
+  let sz = size / 1pt
+  let base-x = tx - ux * sz * 1pt
+  let base-y = ty - uy * sz * 1pt
+
+  let p1 = (base-x + px * half * 1pt, base-y + py * half * 1pt)
+  let p2 = (base-x - px * half * 1pt, base-y - py * half * 1pt)
+
+  cetz.draw.line(p1, (tx, ty), p2, close: true, fill: fill, stroke: stroke-style)
+}
+
+/// Parse marks string to determine start/end arrow types
+/// Supports: "->", "<-", "<->", "-", "-->"
+#let parse-marks(marks) = {
+  if marks == none or marks == "-" or marks == "" {
+    (start: false, end: false)
+  } else if marks == "->" or marks == "-->" {
+    (start: false, end: true)
+  } else if marks == "<-" or marks == "<--" {
+    (start: true, end: false)
+  } else if marks == "<->" or marks == "<-->" {
+    (start: true, end: true)
+  } else {
+    (start: false, end: true) // default to forward arrow
+  }
+}
+
+/// Draw edge with style (produces CeTZ drawing commands)
 #let draw-edge(vertices, style) = {
-  let stroke = style.at("stroke", default: 1pt + black)
+  let stroke-style = style.at("stroke", default: 1pt + black)
   let marks = style.at("marks", default: "->")
   let dash = style.at("dash", default: none)
-  let decorations = style.at("decorations", default: none)
+  let mark-info = parse-marks(marks)
 
-  if vertices.len() == 2 {
-    // Simple line
-    let (from, to) = vertices
-    cetz.draw.line(from, to, stroke: stroke, dash: dash)
-
-    // Add marks/arrows
-    if marks != none {
-      // TODO: Add arrowhead rendering
-    }
+  // Build the effective stroke (with dash if specified)
+  let effective-stroke = if dash != none {
+    stroke(paint: stroke-style.paint, thickness: stroke-style.thickness, dash: dash)
   } else {
-    // Polyline
+    stroke-style
+  }
+
+  // Draw the line segments
+  if vertices.len() == 2 {
+    let (from, to) = vertices
+    cetz.draw.line(from, to, stroke: effective-stroke)
+  } else if vertices.len() > 2 {
     for i in range(vertices.len() - 1) {
       let from = vertices.at(i)
       let to = vertices.at(i + 1)
-      cetz.draw.line(from, to, stroke: stroke, dash: dash)
+      cetz.draw.line(from, to, stroke: effective-stroke)
+    }
+  }
+
+  // Draw arrowheads
+  if vertices.len() >= 2 {
+    // Extract paint color from stroke for arrowhead fill
+    let arrow-color = stroke-style.paint
+
+    if mark-info.end {
+      let last = vertices.at(vertices.len() - 1)
+      let second-last = vertices.at(vertices.len() - 2)
+      draw-arrowhead(second-last, last, fill: arrow-color)
     }
 
-    // Add marks
-    if marks != none {
-      // TODO: Add arrowhead rendering at end
+    if mark-info.start {
+      let first = vertices.at(0)
+      let second = vertices.at(1)
+      draw-arrowhead(second, first, fill: arrow-color)
     }
   }
 }
 
 /// Connect two points with an edge
-#let connect-points(from, to, style-name: none, routing: "auto", waypoints: none) = {
-  let style = if style-name != none {
-    get-edge-style(style-name)
+#let connect-points(from, to, style: none, routing: "direct", waypoints: none) = {
+  let edge-s = if style != none {
+    style
   } else {
     (stroke: 1pt + black, marks: "->", routing: "direct")
   }
 
-  if style == none {
-    error("Edge style not found: " + str(style-name))
-  }
-
   let routing-type = if routing == "auto" {
-    style.at("routing", default: "direct")
+    edge-s.at("routing", default: "direct")
   } else {
     routing
   }
 
   let vertices = route-edge(from, to, routing-type, waypoints: waypoints)
-  draw-edge(vertices, style)
+  draw-edge(vertices, edge-s)
 }
 
-/// Connect two connectors
-/// Supports: connect(component.connector(name, index), other.connector(name), style)
-#let connect(from-connector, to-connector, style-name: none, routing: "auto", waypoints: none) = {
-  // Resolve connector positions
-  // Connectors can be passed as:
-  // - Dict with position
-  // - Component reference like comp.connector("name", index)
-  // - String reference like "component.connector.name"
-
-  let from-pos = if type(from-connector) == dict {
-    from-connector.at("position", default: (0, 0))
-  } else if type(from-connector) == str {
-    // Parse string reference "component.connector.name" or "component.connector.name[index]"
-    resolve-connector-reference(from-connector)
+/// Connect two connectors or positions
+#let connect(from-ref, to-ref, style: none, routing: "auto", waypoints: none) = {
+  let from-pos = if type(from-ref) == dictionary {
+    from-ref.at("position", default: (0pt, 0pt))
+  } else if type(from-ref) == array {
+    from-ref
   } else {
-    (0, 0) // Placeholder
+    (0pt, 0pt)
   }
 
-  let to-pos = if type(to-connector) == dict {
-    to-connector.at("position", default: (0, 0))
-  } else if type(to-connector) == str {
-    resolve-connector-reference(to-connector)
+  let to-pos = if type(to-ref) == dictionary {
+    to-ref.at("position", default: (0pt, 0pt))
+  } else if type(to-ref) == array {
+    to-ref
   } else {
-    (0, 0) // Placeholder
+    (0pt, 0pt)
   }
 
-  connect-points(from-pos, to-pos, style-name: style-name, routing: routing, waypoints: waypoints)
-}
-
-/// Resolve connector reference string
-#let resolve-connector-reference(ref-str) = {
-  // Format: "component.connector.name" or "component.connector.name[index]"
-  let parts = ref-str.split(".")
-  if parts.len() < 3 {
-    error("Invalid connector reference: " + ref-str)
-  }
-
-  let comp-name = parts.at(0)
-  let conn-name = parts.at(2)
-  let index = none
-
-  // Check for index in connector name
-  if "[" in conn-name {
-    let (name-part, index-part) = conn-name.split("[")
-    conn-name = name-part
-    index = int(index-part.replace("]", ""))
-  }
-
-  let conn = get-connector(comp-name, conn-name, index: index)
-  // Get absolute position of the connector
-  let comp = component-registry.get().at(comp-name)
-  get-absolute-position(comp.canvas.name, conn.position)
+  connect-points(from-pos, to-pos, style: style, routing: routing, waypoints: waypoints)
 }
 
 /// Connect to primitive anchor point
-#let connect-to-anchor(primitive, anchor-name, to, style-name: none, routing: "auto") = {
-  let anchor-pos = primitive.get-anchor(anchor-name)
-  connect-points(anchor-pos, to, style-name: style-name, routing: routing)
+#let connect-to-anchor(primitive, anchor-name, to, style: none, routing: "direct") = {
+  let anchor-pos = (primitive.get-anchor)(anchor-name)
+  connect-points(anchor-pos, to, style: style, routing: routing)
 }
-
