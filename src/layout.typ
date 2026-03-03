@@ -83,7 +83,11 @@
 
   for item in content {
     let item-bounds = if type(item) == dictionary and "bounds" in item {
-      item.bounds
+      let b = item.bounds
+      // Offset bounds by the item's placed position (if any)
+      let pos = item.at("position", default: (0pt, 0pt))
+      let (px, py) = if type(pos) == array { pos } else { (0pt, 0pt) }
+      (x: b.x + px, y: b.y + py, width: b.width, height: b.height)
     } else {
       none
     }

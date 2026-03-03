@@ -49,7 +49,8 @@ docs/manual.typ              # API reference (generated via Tidy)
 - **Unified model:** Primitives are "minimal components" with the same interface (`bounds`, `render()`, `get-anchor()`, `is-primitive`)
 - **Factory functions:** `component()`, `connector()`, `edge-style()`, `primitive-rect/circle/ellipse()` return dictionary objects
 - **Pure placement:** `place-component(comp, position)` returns an updated component dict (no state mutation)
-- **Rendering:** `render(comp, mode:)` produces CeTZ content; modes: `"detailed"`, `"collapsed"`, `"high-level"`
+- **Two-layer rendering:** `draw-content(comp)` / `draw-item(item)` produce raw CeTZ draw commands (safe for recursive nesting); `render(comp, mode:)` wraps in `cetz.canvas()` for final output
+- **Rendering modes:** `"detailed"`, `"collapsed"`, `"high-level"`
 
 ## Key Conventions
 
@@ -65,11 +66,12 @@ docs/manual.typ              # API reference (generated via Tidy)
 
 - **Framework:** Tytanic (visual regression, installed to `bin/tt`)
 - **Test location:** `tests/<name>/test.typ` with reference images in `tests/<name>/ref/`
-- **13 active tests:** All passing with reference images
+- **15 active tests:** All passing with reference images
   - **Primitives:** primitives-rect, primitives-circle, primitives-ellipse
   - **Colors:** color-variations
   - **Components:** component-borders-rect, component-borders-circle, component-borders-ellipse, nested-components
   - **Features:** component-connectors, component-inheritance, edge-routing, render-modes, styles-and-themes
+  - **Domain:** computer-architecture, datacenter-architecture (nested components with edges in single canvas)
 - **Legacy disabled tests** (in `_component-tests-disabled/`): Original versions that used the old state-based API. Kept for reference only.
 
 ## Dependencies

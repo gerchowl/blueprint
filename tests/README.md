@@ -27,6 +27,10 @@ Each test file focuses on a specific feature:
 - `render-modes/` - Detailed, collapsed, and high-level rendering modes
 - `styles-and-themes/` - Style creation, inheritance, and edge styles
 
+### Domain Tests
+- `computer-architecture/` - CPU with nested cache hierarchy, memory and PCIe subsystems
+- `datacenter-architecture/` - Rack with ToR switch, servers, storage, and network edges
+
 ### Legacy (`_component-tests-disabled/`)
 Original test versions that used the old state-based API. Kept for reference only.
 
@@ -78,7 +82,7 @@ just test-update
 
 ## Test Coverage
 
-**Active Tests (13):**
+**Active Tests (15):**
 - primitives-rect — Rectangle primitives with radius, colors, strokes
 - primitives-circle — Circle primitives with various colors and sizes
 - primitives-ellipse — Ellipse primitives with various radii
@@ -92,7 +96,8 @@ just test-update
 - edge-routing — Direct, rectangular, manhattan routing with arrow marks
 - render-modes — Detailed, collapsed, high-level rendering
 - styles-and-themes — Style creation, inheritance, edge styles
+- computer-architecture — CPU with nested cache hierarchy, memory controller, PCIe subsystem
+- datacenter-architecture — Rack with ToR switch, servers, storage, network edges
 
 **Not Yet Implemented:**
 - Relative positioning tests
-- Complex multi-component diagrams with edges between components

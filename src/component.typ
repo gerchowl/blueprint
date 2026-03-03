@@ -125,9 +125,12 @@
   comp + (position: (px, py), canvas: canvas-info)
 }
 
-// -- Rendering helpers (produce CeTZ drawing content) --
+// -- Rendering helpers --
+// Two layers:
+//   draw-*  → produces CeTZ draw commands (usable inside cetz.canvas)
+//   render  → wraps draw-* in cetz.canvas() to produce Typst content
 
-/// Render a border shape inside a CeTZ canvas
+/// Render a border shape (returns CeTZ draw commands)
 #let render-border(comp) = {
   let bounds = comp.bounds
   let border-shape = if type(comp.border) == str { comp.border } else { comp.border-shape }
@@ -167,79 +170,80 @@
   }
 }
 
-/// Render detailed view
-#let render-detailed(comp) = {
-  cetz.canvas({
-    if comp.at("is-primitive", default: false) {
-      comp.shape
-    } else {
-      // Render border first (background)
-      if comp.border {
-        render-border(comp)
-      }
-
-      // Render all content
-      for item in comp.content {
-        if type(item) == dictionary and "render" in item {
-          (item.render)(item, comp.display-mode)
-        } else if type(item) == dictionary and "shape" in item {
-          item.shape
+/// Draw a content item as CeTZ draw commands.
+/// Handles primitives, nested components, and raw CeTZ draw commands.
+#let draw-item(item, mode) = {
+  if type(item) == dictionary {
+    if item.at("is-primitive", default: false) {
+      // Primitive — emit its shape
+      item.shape
+    } else if "is-primitive" in item {
+      // Non-primitive component — recursively render its internals
+      // Translate to the component's placed position so nested coords are correct
+      let pos = item.at("position", default: (0pt, 0pt))
+      let (px, py) = if type(pos) == array { pos } else { (0pt, 0pt) }
+      cetz.draw.scope({
+        cetz.draw.translate((px, py))
+        if mode == "detailed" {
+          if item.border {
+            render-border(item)
+          }
+          for child in item.content {
+            draw-item(child, mode)
+          }
+          for conn in item.connectors {
+            render-connector(conn, item.display-mode)
+          }
         } else {
-          item
+          // collapsed/high-level: just border + connectors
+          render-border(item)
+          for conn in item.connectors {
+            render-connector(conn, mode)
+          }
         }
-      }
-
-      // Render connectors
-      for conn in comp.connectors {
-        render-connector(conn, comp.display-mode)
-      }
+      })
+    } else if "shape" in item {
+      item.shape
+    } else if "render" in item {
+      (item.render)(item, mode)
     }
-  })
-}
-
-/// Render collapsed view
-#let render-collapsed(comp) = {
-  if comp.at("is-primitive", default: false) {
-    cetz.canvas({ comp.shape })
   } else {
-    cetz.canvas({
-      render-border(comp)
-      for conn in comp.connectors {
-        render-connector(conn, "collapsed")
-      }
-    })
+    item
   }
 }
 
-/// Render high-level view
-#let render-high-level(comp) = {
+/// Draw component internals as CeTZ draw commands (no canvas wrapper).
+/// Safe to call from inside a cetz.canvas().
+#let draw-content(comp, mode: "detailed") = {
   if comp.at("is-primitive", default: false) {
-    cetz.canvas({ comp.shape })
-  } else {
-    cetz.canvas({
+    comp.shape
+  } else if mode == "detailed" {
+    if comp.border {
       render-border(comp)
-      for conn in comp.connectors {
-        render-connector(conn, "high-level")
-      }
-    })
+    }
+    for item in comp.content {
+      draw-item(item, mode)
+    }
+    for conn in comp.connectors {
+      render-connector(conn, comp.display-mode)
+    }
+  } else {
+    // collapsed / high-level
+    render-border(comp)
+    for conn in comp.connectors {
+      render-connector(conn, mode)
+    }
   }
 }
 
-/// Render component — main entry point
-/// component: a component dict or primitive dict
-/// mode: "detailed", "collapsed", or "high-level"
+/// Render component — main entry point.
+/// Wraps draw commands in cetz.canvas() to produce Typst content.
 #let render(comp, mode: "detailed") = {
   if comp == none {
     panic("Component is none — cannot render")
   }
 
-  if mode == "detailed" {
-    render-detailed(comp)
-  } else if mode == "collapsed" {
-    render-collapsed(comp)
-  } else if mode == "high-level" {
-    render-high-level(comp)
-  } else {
-    render-detailed(comp)
-  }
+  cetz.canvas({
+    draw-content(comp, mode: mode)
+  })
 }
