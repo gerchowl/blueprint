@@ -4,7 +4,11 @@
 #import "style.typ": *
 
 /// Create a connector (pure function, returns a dict)
-#let connector(name, position, group: none, count: 1, group-display: "auto", group-label: none, style: none) = {
+/// Position can be explicit (x, y) coordinates, or use `side` + `offset` for
+/// border-relative positioning (resolved when the component is created).
+/// - side: "top", "bottom", "left", "right" — places connector on that border edge
+/// - offset: 0.0 to 1.0 — fraction along that edge (0 = start, 1 = end)
+#let connector(name, position, group: none, count: 1, group-display: "auto", group-label: none, style: none, side: none, offset: 0.5) = {
   let conn-style = if style != none { style } else { default-connector-style }
   (
     name: name,
@@ -15,7 +19,34 @@
     group-label: group-label,
     style: conn-style,
     index: none,
+    side: side,
+    offset: offset,
   )
+}
+
+/// Resolve border-relative connectors to absolute positions
+/// Called after border bounds are computed
+#let resolve-border-connectors(connectors, border-bounds) = {
+  let b = border-bounds
+  connectors.map(conn => {
+    if conn.at("side", default: none) != none {
+      let off = conn.at("offset", default: 0.5)
+      let pos = if conn.side == "top" {
+        (b.x + b.width * off, b.y + b.height)
+      } else if conn.side == "bottom" {
+        (b.x + b.width * off, b.y)
+      } else if conn.side == "left" {
+        (b.x, b.y + b.height * off)
+      } else if conn.side == "right" {
+        (b.x + b.width, b.y + b.height * off)
+      } else {
+        conn.position
+      }
+      conn + (position: pos)
+    } else {
+      conn
+    }
+  })
 }
 
 /// Render individual connector (returns CeTZ drawing commands)

@@ -39,17 +39,23 @@
 }
 
 /// Create a rectangle primitive with anchor points
-#let primitive-rect(position, size, fill: none, stroke: 1pt + black, radius: 0pt) = {
+#let primitive-rect(position, size, fill: none, stroke: 1pt + black, radius: 0pt, label: none, label-size: 7pt) = {
   let (x, y) = position
   let (w, h) = size
 
-  let shape = cetz.draw.rect(
-    (x, y),
-    (x + w, y + h),
-    fill: fill,
-    stroke: stroke,
-    radius: radius,
-  )
+  let shape = {
+    cetz.draw.rect(
+      (x, y),
+      (x + w, y + h),
+      fill: fill,
+      stroke: stroke,
+      radius: radius,
+    )
+    if label != none {
+      let label-color = if type(stroke) == color { stroke } else if stroke != none and type(stroke) != bool { stroke.paint } else { black }
+      cetz.draw.content((x + w * 0.5, y + h * 0.5), text(size: label-size, fill: label-color, weight: "medium", label))
+    }
+  }
 
   let bounds = (x: x, y: y, width: w, height: h)
 
@@ -74,10 +80,16 @@
 }
 
 /// Create a circle primitive with anchor points
-#let primitive-circle(center, radius, fill: none, stroke: 1pt + black) = {
+#let primitive-circle(center, radius, fill: none, stroke: 1pt + black, label: none, label-size: 7pt) = {
   let (cx, cy) = center
 
-  let shape = cetz.draw.circle(center, radius: radius, fill: fill, stroke: stroke)
+  let shape = {
+    cetz.draw.circle(center, radius: radius, fill: fill, stroke: stroke)
+    if label != none {
+      let label-color = if type(stroke) == color { stroke } else if stroke != none and type(stroke) != bool { stroke.paint } else { black }
+      cetz.draw.content((cx, cy), text(size: label-size, fill: label-color, weight: "medium", label))
+    }
+  }
 
   let bounds = (x: cx - radius, y: cy - radius, width: 2 * radius, height: 2 * radius)
 
@@ -99,10 +111,16 @@
 }
 
 /// Create an ellipse primitive with anchor points
-#let primitive-ellipse(center, radius-x, radius-y, fill: none, stroke: 1pt + black) = {
+#let primitive-ellipse(center, radius-x, radius-y, fill: none, stroke: 1pt + black, label: none, label-size: 7pt) = {
   let (cx, cy) = center
 
-  let shape = cetz.draw.circle(center, radius: (radius-x, radius-y), fill: fill, stroke: stroke)
+  let shape = {
+    cetz.draw.circle(center, radius: (radius-x, radius-y), fill: fill, stroke: stroke)
+    if label != none {
+      let label-color = if type(stroke) == color { stroke } else if stroke != none and type(stroke) != bool { stroke.paint } else { black }
+      cetz.draw.content((cx, cy), text(size: label-size, fill: label-color, weight: "medium", label))
+    }
+  }
 
   let bounds = (x: cx - radius-x, y: cy - radius-y, width: 2 * radius-x, height: 2 * radius-y)
 

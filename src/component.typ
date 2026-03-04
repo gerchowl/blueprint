@@ -28,6 +28,9 @@
     final-content-bounds
   }
 
+  // Resolve border-relative connectors (side/offset → actual positions)
+  let resolved-connectors = resolve-border-connectors(connectors, border-bounds)
+
   let canvas-info = canvas-info + (bounds: border-bounds)
 
   (
@@ -40,7 +43,7 @@
     border-shape: border-shape,
     margin: margin,
     style: style,
-    connectors: connectors,
+    connectors: resolved-connectors,
     bounds: border-bounds,
     content-bounds: final-content-bounds,
     parent: parent,
@@ -99,9 +102,12 @@
     final-content-bounds
   }
 
+  let resolved-connectors = resolve-border-connectors(merged.connectors, border-bounds)
+
   merged + (
     bounds: border-bounds,
     content-bounds: final-content-bounds,
+    connectors: resolved-connectors,
     canvas: merged.canvas + (bounds: border-bounds),
   )
 }
@@ -170,6 +176,31 @@
   }
 }
 
+/// Render component name label at the top of the border (Y-up)
+#let render-name-label(comp, centered: false) = {
+  if comp.name == none { return }
+  let b = comp.bounds
+  let s = if comp.style != none { comp.style } else { (:) }
+  let stroke-val = s.at("stroke", default: 1pt + black)
+  let label-color = if type(stroke-val) == color { stroke-val } else { stroke-val.paint }
+
+  if centered {
+    // Collapsed/high-level: name centered in the border
+    cetz.draw.content(
+      (b.x + b.width / 2, b.y + b.height / 2),
+      text(size: 9pt, fill: label-color, weight: "bold", comp.name),
+    )
+  } else {
+    // Detailed: name ABOVE the top border edge (outside)
+    cetz.draw.content(
+      (b.x + b.width / 2, b.y + b.height),
+      text(size: 7pt, fill: label-color, weight: "bold", comp.name),
+      anchor: "south",
+      padding: 1pt,
+    )
+  }
+}
+
 /// Draw a content item as CeTZ draw commands.
 /// Handles primitives, nested components, and raw CeTZ draw commands.
 #let draw-item(item, mode) = {
@@ -187,6 +218,7 @@
         if mode == "detailed" {
           if item.border {
             render-border(item)
+            render-name-label(item)
           }
           for child in item.content {
             draw-item(child, mode)
@@ -195,8 +227,9 @@
             render-connector(conn, item.display-mode)
           }
         } else {
-          // collapsed/high-level: just border + connectors
+          // collapsed/high-level: just border + name + connectors
           render-border(item)
+          render-name-label(item, centered: true)
           for conn in item.connectors {
             render-connector(conn, mode)
           }
@@ -220,6 +253,7 @@
   } else if mode == "detailed" {
     if comp.border {
       render-border(comp)
+      render-name-label(comp)
     }
     for item in comp.content {
       draw-item(item, mode)
@@ -228,8 +262,9 @@
       render-connector(conn, comp.display-mode)
     }
   } else {
-    // collapsed / high-level
+    // collapsed / high-level: border + centered name
     render-border(comp)
+    render-name-label(comp, centered: true)
     for conn in comp.connectors {
       render-connector(conn, mode)
     }

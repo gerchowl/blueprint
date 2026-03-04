@@ -1,7 +1,7 @@
 /// Test: Nested components (components containing primitives)
 #import "/src/exports.typ" as blueprint
 
-#set page(width: 14cm, height: 10cm, margin: 1cm)
+#set page(width: 14cm, height: 13cm, margin: 1cm)
 
 // Create some primitives to nest
 #let inner-rect = blueprint.primitive-rect(

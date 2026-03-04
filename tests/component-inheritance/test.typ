@@ -1,7 +1,7 @@
 /// Test: Component inheritance via component-extend
 #import "/src/exports.typ" as blueprint
 
-#set page(width: 14cm, height: 8cm, margin: 1cm)
+#set page(width: 14cm, height: 11cm, margin: 1cm)
 
 // --- Base component ---
 #let base = blueprint.component(
