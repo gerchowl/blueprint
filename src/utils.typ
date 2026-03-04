@@ -6,7 +6,8 @@
 #let anchor-to-offset(anchor) = {
   let (h, v) = if type(anchor) == array { anchor } else { (anchor, anchor) }
   let h-offset = if h == "left" or h == left { 0.0 } else if h == "center" { 0.5 } else if h == "right" or h == right { 1.0 } else { 0.5 }
-  let v-offset = if v == "top" or v == top { 0.0 } else if v == "center" { 0.5 } else if v == "bottom" or v == bottom { 1.0 } else { 0.5 }
+  // Y-up: top = max-Y (1.0), bottom = min-Y (0.0)
+  let v-offset = if v == "top" or v == top { 1.0 } else if v == "center" { 0.5 } else if v == "bottom" or v == bottom { 0.0 } else { 0.5 }
   (h-offset, v-offset)
 }
 

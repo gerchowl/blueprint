@@ -15,12 +15,13 @@
   let ref-bounds = ref-obj.bounds
   let ref-pos = ref-obj.position
 
-  let ref-anchor-x = ref-pos.at(0) + ref-bounds.width * h-anchor
-  let ref-anchor-y = ref-pos.at(1) + ref-bounds.height * v-anchor
+  let ref-anchor-x = ref-pos.at(0) + ref-bounds.x + ref-bounds.width * h-anchor
+  let ref-anchor-y = ref-pos.at(1) + ref-bounds.y + ref-bounds.height * v-anchor
 
   let new-x = ref-anchor-x
   let new-y = ref-anchor-y
 
+  // Gap direction: left/bottom (0.0) subtracts, right/top (1.0) adds
   if h-anchor == 0.0 {
     new-x = ref-anchor-x - gap-x
   } else if h-anchor == 1.0 {
@@ -51,8 +52,8 @@
   let ref-pos = ref-obj.position
 
   // Reference anchor point in absolute coordinates
-  let ref-anchor-x = ref-pos.at(0) + ref-bounds.width * ref-h
-  let ref-anchor-y = ref-pos.at(1) + ref-bounds.height * ref-v
+  let ref-anchor-x = ref-pos.at(0) + ref-bounds.x + ref-bounds.width * ref-h
+  let ref-anchor-y = ref-pos.at(1) + ref-bounds.y + ref-bounds.height * ref-v
 
   // Apply gap based on direction
   let new-x = ref-anchor-x

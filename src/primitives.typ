@@ -59,16 +59,17 @@
 
   let bounds = (x: x, y: y, width: w, height: h)
 
+  // Y-up: top = max-Y, bottom = min-Y
   let anchors = (
-    "top-left": (x, y),
-    "top-center": (x + w * 0.5, y),
-    "top-right": (x + w, y),
+    "top-left": (x, y + h),
+    "top-center": (x + w * 0.5, y + h),
+    "top-right": (x + w, y + h),
     "center-left": (x, y + h * 0.5),
     "center": (x + w * 0.5, y + h * 0.5),
     "center-right": (x + w, y + h * 0.5),
-    "bottom-left": (x, y + h),
-    "bottom-center": (x + w * 0.5, y + h),
-    "bottom-right": (x + w, y + h),
+    "bottom-left": (x, y),
+    "bottom-center": (x + w * 0.5, y),
+    "bottom-right": (x + w, y),
   )
 
   let get-anchor = (anchor-name) => {
@@ -93,10 +94,11 @@
 
   let bounds = (x: cx - radius, y: cy - radius, width: 2 * radius, height: 2 * radius)
 
+  // Y-up: top = max-Y, bottom = min-Y
   let anchors = (
-    "top": (cx, cy - radius),
+    "top": (cx, cy + radius),
     "right": (cx + radius, cy),
-    "bottom": (cx, cy + radius),
+    "bottom": (cx, cy - radius),
     "left": (cx - radius, cy),
     "center": (cx, cy),
   )
@@ -124,10 +126,11 @@
 
   let bounds = (x: cx - radius-x, y: cy - radius-y, width: 2 * radius-x, height: 2 * radius-y)
 
+  // Y-up: top = max-Y, bottom = min-Y
   let anchors = (
-    "top": (cx, cy - radius-y),
+    "top": (cx, cy + radius-y),
     "right": (cx + radius-x, cy),
-    "bottom": (cx, cy + radius-y),
+    "bottom": (cx, cy - radius-y),
     "left": (cx - radius-x, cy),
     "center": (cx, cy),
   )

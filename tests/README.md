@@ -26,6 +26,7 @@ Each test file focuses on a specific feature:
 - `edge-routing/` - Edge routing modes (direct, rectangular, manhattan) and arrow marks
 - `render-modes/` - Detailed, collapsed, and high-level rendering modes
 - `styles-and-themes/` - Style creation, inheritance, and edge styles
+- `relative-positioning/` - Relative placement using `relative-with-anchor()` vs manual coordinates
 
 ### Domain Tests
 - `computer-architecture/` - CPU with nested cache hierarchy, memory and PCIe subsystems
@@ -82,7 +83,7 @@ just test-update
 
 ## Test Coverage
 
-**Active Tests (15):**
+**Active Tests (16):**
 - primitives-rect — Rectangle primitives with radius, colors, strokes
 - primitives-circle — Circle primitives with various colors and sizes
 - primitives-ellipse — Ellipse primitives with various radii
@@ -98,6 +99,4 @@ just test-update
 - styles-and-themes — Style creation, inheritance, edge styles
 - computer-architecture — CPU with nested cache hierarchy, memory controller, PCIe subsystem
 - datacenter-architecture — Rack with ToR switch, servers, storage, network edges
-
-**Not Yet Implemented:**
-- Relative positioning tests
+- relative-positioning — Datacenter rack built with relative-with-anchor() instead of absolute coords

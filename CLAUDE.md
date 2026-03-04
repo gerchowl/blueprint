@@ -66,11 +66,11 @@ docs/manual.typ              # API reference (generated via Tidy)
 
 - **Framework:** Tytanic (visual regression, installed to `bin/tt`)
 - **Test location:** `tests/<name>/test.typ` with reference images in `tests/<name>/ref/`
-- **15 active tests:** All passing with reference images
+- **16 active tests:** All passing with reference images
   - **Primitives:** primitives-rect, primitives-circle, primitives-ellipse
   - **Colors:** color-variations
   - **Components:** component-borders-rect, component-borders-circle, component-borders-ellipse, nested-components
-  - **Features:** component-connectors, component-inheritance, edge-routing, render-modes, styles-and-themes
+  - **Features:** component-connectors, component-inheritance, edge-routing, render-modes, styles-and-themes, relative-positioning
   - **Domain:** computer-architecture, datacenter-architecture (nested components with edges in single canvas)
 - **Legacy disabled tests** (in `_component-tests-disabled/`): Original versions that used the old state-based API. Kept for reference only.
 
