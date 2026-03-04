@@ -28,18 +28,110 @@
   ((fx, fy), (tx, fy), (tx, ty))
 }
 
-/// Route edge with Manhattan routing (smart rectangular)
-#let route-manhattan(from, to) = {
+/// Route edge with Manhattan routing (smart rectangular with perpendicular border exits)
+/// from-side/to-side: "top", "bottom", "left", "right" or none
+/// When side info is provided, edges leave/arrive perpendicular to the border.
+/// Favors fewer turns over shorter paths.
+#let route-manhattan(from, to, from-side: none, to-side: none, stub: 4mm) = {
   let (fx, fy) = from
   let (tx, ty) = to
-  let dx = calc.abs(tx - fx)
-  let dy = calc.abs(ty - fy)
 
-  if dx > dy {
-    ((fx, fy), (tx, fy), (tx, ty))
-  } else {
-    ((fx, fy), (fx, ty), (tx, ty))
+  // Determine exit direction from connector side (perpendicular outward)
+  let exit-dir = if from-side == "top" { (0pt, 1pt) }
+    else if from-side == "bottom" { (0pt, -1pt) }
+    else if from-side == "left" { (-1pt, 0pt) }
+    else if from-side == "right" { (1pt, 0pt) }
+    else { none }
+
+  // Determine entry direction (perpendicular outward from to-side, used for stub)
+  let entry-dir = if to-side == "top" { (0pt, 1pt) }
+    else if to-side == "bottom" { (0pt, -1pt) }
+    else if to-side == "left" { (-1pt, 0pt) }
+    else if to-side == "right" { (1pt, 0pt) }
+    else { none }
+
+  // If no side info, fall back to simple heuristic
+  if exit-dir == none and entry-dir == none {
+    // Infer directions from geometry
+    let dx = tx - fx
+    let dy = ty - fy
+    if calc.abs(dx) < 0.5pt and calc.abs(dy) < 0.5pt {
+      return (from, to)
+    }
+    // Prefer the direction with greater distance (fewer turns = 1 L-shape)
+    if calc.abs(dx) > calc.abs(dy) {
+      return ((fx, fy), (tx, fy), (tx, ty))
+    } else {
+      return ((fx, fy), (fx, ty), (tx, ty))
+    }
   }
+
+  // Compute exit stub point
+  let (ex, ey) = if exit-dir != none {
+    let (dx, dy) = exit-dir
+    (fx + dx / 1pt * stub, fy + dy / 1pt * stub)
+  } else { (fx, fy) }
+
+  // Compute entry stub point
+  let (nx, ny) = if entry-dir != none {
+    let (dx, dy) = entry-dir
+    (tx + dx / 1pt * stub, ty + dy / 1pt * stub)
+  } else { (tx, ty) }
+
+  // Determine if exit/entry are vertical or horizontal movements
+  let exit-vertical = exit-dir != none and exit-dir.at(0) == 0pt
+  let entry-vertical = entry-dir != none and entry-dir.at(0) == 0pt
+
+  // Connect the two stub points with minimal turns
+  let mid-points = if calc.abs(ex - nx) < 0.5pt and calc.abs(ey - ny) < 0.5pt {
+    // Stubs already meet — no mid points needed
+    ()
+  } else if calc.abs(ex - nx) < 0.5pt {
+    // Same X — straight vertical (0 extra turns)
+    ()
+  } else if calc.abs(ey - ny) < 0.5pt {
+    // Same Y — straight horizontal (0 extra turns)
+    ()
+  } else if exit-vertical and entry-vertical {
+    // Both stubs are vertical → need horizontal bridge (2 extra turns)
+    let mid-y = (ey + ny) / 2
+    ((ex, mid-y), (nx, mid-y))
+  } else if not exit-vertical and not entry-vertical {
+    // Both stubs are horizontal → need vertical bridge (2 extra turns)
+    let mid-x = (ex + nx) / 2
+    ((mid-x, ey), (mid-x, ny))
+  } else if exit-vertical and not entry-vertical {
+    // Exit vertical, entry horizontal → L-shape (1 extra turn)
+    // Go to (ex, ny) — extend vertical to entry's Y, then horizontal
+    ((ex, ny),)
+  } else {
+    // Exit horizontal, entry vertical → L-shape (1 extra turn)
+    // Go to (nx, ey) — extend horizontal to entry's X, then vertical
+    ((nx, ey),)
+  }
+
+  // Assemble path: from → exit-stub → midpoints → entry-stub → to
+  let path = (from,)
+  if exit-dir != none { path.push((ex, ey)) }
+  for p in mid-points { path.push(p) }
+  if entry-dir != none { path.push((nx, ny)) }
+  path.push(to)
+
+  // Remove redundant collinear points
+  let cleaned = (path.at(0),)
+  for i in range(1, path.len() - 1) {
+    let (px, py) = path.at(i - 1)
+    let (cx, cy) = path.at(i)
+    let (nx2, ny2) = path.at(i + 1)
+    // Keep point if it's a turn (not collinear)
+    let same-x = calc.abs(px - cx) < 0.5pt and calc.abs(cx - nx2) < 0.5pt
+    let same-y = calc.abs(py - cy) < 0.5pt and calc.abs(cy - ny2) < 0.5pt
+    if not same-x and not same-y {
+      cleaned.push((cx, cy))
+    }
+  }
+  cleaned.push(path.last())
+  cleaned
 }
 
 /// Route edge manually with waypoints
@@ -48,13 +140,13 @@
 }
 
 /// Route edge based on routing type
-#let route-edge(from, to, routing-type, waypoints: none) = {
+#let route-edge(from, to, routing-type, waypoints: none, from-side: none, to-side: none) = {
   if routing-type == "direct" {
     route-direct(from, to)
   } else if routing-type == "rectangular" {
     route-rectangular(from, to)
   } else if routing-type == "manhattan" {
-    route-manhattan(from, to)
+    route-manhattan(from, to, from-side: from-side, to-side: to-side)
   } else if routing-type == "manual" {
     if waypoints == none {
       panic("Manual routing requires waypoints")
@@ -161,7 +253,8 @@
 }
 
 /// Connect two points with an edge
-#let connect-points(from, to, style: none, routing: "direct", waypoints: none) = {
+/// from-side/to-side: optional connector side hints for Manhattan routing
+#let connect-points(from, to, style: none, routing: "direct", waypoints: none, from-side: none, to-side: none) = {
   let edge-s = if style != none {
     style
   } else {
@@ -174,11 +267,12 @@
     routing
   }
 
-  let vertices = route-edge(from, to, routing-type, waypoints: waypoints)
+  let vertices = route-edge(from, to, routing-type, waypoints: waypoints, from-side: from-side, to-side: to-side)
   draw-edge(vertices, edge-s)
 }
 
 /// Connect two connectors or positions
+/// Auto-detects connector side for Manhattan routing when refs are connector dicts
 #let connect(from-ref, to-ref, style: none, routing: "auto", waypoints: none) = {
   let from-pos = if type(from-ref) == dictionary {
     from-ref.at("position", default: (0pt, 0pt))
@@ -196,7 +290,11 @@
     (0pt, 0pt)
   }
 
-  connect-points(from-pos, to-pos, style: style, routing: routing, waypoints: waypoints)
+  // Auto-detect side from connector dicts
+  let from-side = if type(from-ref) == dictionary { from-ref.at("side", default: none) } else { none }
+  let to-side = if type(to-ref) == dictionary { to-ref.at("side", default: none) } else { none }
+
+  connect-points(from-pos, to-pos, style: style, routing: routing, waypoints: waypoints, from-side: from-side, to-side: to-side)
 }
 
 /// Connect to primitive anchor point
