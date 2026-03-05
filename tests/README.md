@@ -32,6 +32,9 @@ Each test file focuses on a specific feature:
 - `computer-architecture/` - CPU with nested cache hierarchy, memory and PCIe subsystems
 - `datacenter-architecture/` - Rack with ToR switch, servers, storage, and network edges
 
+### SQL-Driven Tests
+- `sql-generated/` - Multi-rack datacenter diagram generated from SQLite via `tools/sql_to_blueprint.py`
+
 ### Legacy (`_component-tests-disabled/`)
 Original test versions that used the old state-based API. Kept for reference only.
 
@@ -83,7 +86,7 @@ just test-update
 
 ## Test Coverage
 
-**Active Tests (16):**
+**Active Tests (17):**
 - primitives-rect — Rectangle primitives with radius, colors, strokes
 - primitives-circle — Circle primitives with various colors and sizes
 - primitives-ellipse — Ellipse primitives with various radii
@@ -100,3 +103,4 @@ just test-update
 - computer-architecture — CPU with nested cache hierarchy, memory controller, PCIe subsystem
 - datacenter-architecture — Rack with ToR switch, servers, storage, network edges
 - relative-positioning — Datacenter rack built with relative-with-anchor() instead of absolute coords
+- sql-generated — Multi-rack datacenter diagram generated from SQLite database via Python
