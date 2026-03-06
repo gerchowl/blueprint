@@ -113,22 +113,118 @@
 }
 
 /// Create component instances with variations — pure function
-#let instance(base-component, count: 1, variations: (:)) = {
+/// Returns an array of components, each with instance-id and optional name suffix.
+/// - base-component: the template component to replicate
+/// - count: number of instances
+/// - variations: dict keyed by "0", "1", ... with per-instance overrides
+/// - name-fn: optional function (index) => name string for each instance
+#let instance(base-component, count: 1, variations: (:), name-fn: none) = {
   let instances = ()
   for i in range(count) {
     let variation = variations.at(str(i), default: (:))
-    let inst = base-component + variation + (instance-id: i, is-instance: true)
+    let inst-name = if name-fn != none { (name-fn)(i) }
+      else if base-component.name != none { base-component.name + " #" + str(i + 1) }
+      else { none }
+    let inst = base-component + variation + (
+      instance-id: i,
+      instance-count: count,
+      is-instance: true,
+      name: inst-name,
+    )
     instances.push(inst)
   }
   instances
 }
 
 /// Place component at position — returns updated component dict
+/// - comp: component dictionary
+/// - position: (x, y) placement coordinates
+/// - anchor: optional anchor override (default: comp.origin)
 #let place-component(comp, position, anchor: none) = {
   let origin-anchor = if anchor != none { anchor } else { comp.origin }
   let (px, py) = if type(position) == array { position } else { (position.x, position.y) }
   let canvas-info = calculate-canvas-transform(comp.canvas, (px, py), origin-anchor)
   comp + (position: (px, py), canvas: canvas-info)
+}
+
+/// Stack components vertically or horizontally from a starting position.
+/// Returns an array of placed components.
+/// - items: array of (unplaced) components
+/// - start: (x, y) position for the first item
+/// - direction: "up", "down", "left", "right"
+/// - gap: spacing between items (length or (x, y) pair)
+#let stack(items, start: (0pt, 0pt), direction: "up", gap: 4mm) = {
+  if items.len() == 0 { return () }
+  let placed = ()
+  let prev = place-component(items.at(0), start)
+  placed.push(prev)
+
+  // Map direction to anchor pairs
+  let (ref-anchor, target-anchor, gap-vec) = if direction == "up" {
+    ((left, top), (left, bottom), (0pt, gap))
+  } else if direction == "down" {
+    ((left, bottom), (left, top), (0pt, gap))
+  } else if direction == "right" {
+    ((right, center), (left, center), (gap, 0pt))
+  } else {
+    // "left"
+    ((left, center), (right, center), (gap, 0pt))
+  }
+
+  for i in range(1, items.len()) {
+    let item = items.at(i)
+    let pos = relative-with-anchor(
+      prev, ref-anchor, target-anchor,
+      target-bounds: item.bounds, gap: gap-vec,
+    )
+    prev = place-component(item, pos)
+    placed.push(prev)
+  }
+  placed
+}
+
+/// Arrange components in a grid from a starting position.
+/// Returns an array of placed components (row-major order).
+/// - items: array of (unplaced) components
+/// - start: (x, y) position for the first item (bottom-left of grid)
+/// - cols: number of columns
+/// - gap: (col-gap, row-gap) or single value for both
+#let grid(items, start: (0pt, 0pt), cols: 3, gap: 4mm) = {
+  if items.len() == 0 { return () }
+  let (gap-x, gap-y) = normalize-gap(gap)
+
+  // Place first item
+  let placed = ()
+  let first = place-component(items.at(0), start)
+  placed.push(first)
+
+  // Track row anchors: first item of each row
+  let row-start = first
+
+  for i in range(1, items.len()) {
+    let item = items.at(i)
+    let col = calc.rem(i, cols)
+    let prev = placed.last()
+
+    if col == 0 {
+      // New row: place above the row-start
+      let pos = relative-with-anchor(
+        row-start, (left, top), (left, bottom),
+        target-bounds: item.bounds, gap: (0pt, gap-y),
+      )
+      let p = place-component(item, pos)
+      placed.push(p)
+      row-start = p
+    } else {
+      // Same row: place to the right of previous
+      let pos = relative-with-anchor(
+        prev, (right, center), (left, center),
+        target-bounds: item.bounds, gap: (gap-x, 0pt),
+      )
+      placed.push(place-component(item, pos))
+    }
+  }
+  placed
 }
 
 // -- Rendering helpers --
@@ -176,7 +272,8 @@
   }
 }
 
-/// Render component name label at the top of the border (Y-up)
+/// Render component name label at the top of the border (Y-up).
+/// Shows "×N" badge when the component is part of an instance group.
 #let render-name-label(comp, centered: false) = {
   if comp.name == none { return }
   let b = comp.bounds
@@ -184,17 +281,23 @@
   let stroke-val = s.at("stroke", default: 1pt + black)
   let label-color = if type(stroke-val) == color { stroke-val } else { stroke-val.paint }
 
+  // Build label text with optional instance badge
+  let inst-count = comp.at("instance-count", default: none)
+  let label-text = if inst-count != none and inst-count > 1 {
+    comp.name + " ×" + str(inst-count)
+  } else {
+    comp.name
+  }
+
   if centered {
-    // Collapsed/high-level: name centered in the border
     cetz.draw.content(
       (b.x + b.width / 2, b.y + b.height / 2),
-      text(size: 9pt, fill: label-color, weight: "bold", comp.name),
+      text(size: 9pt, fill: label-color, weight: "bold", label-text),
     )
   } else {
-    // Detailed: name ABOVE the top border edge (outside)
     cetz.draw.content(
       (b.x + b.width / 2, b.y + b.height),
-      text(size: 7pt, fill: label-color, weight: "bold", comp.name),
+      text(size: 7pt, fill: label-color, weight: "bold", label-text),
       anchor: "south",
       padding: 1pt,
     )

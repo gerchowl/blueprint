@@ -236,82 +236,66 @@
 
 // ── Rack assemblies (relative positioning) ───────────────────────
 
-// ── Rack-A1 assembly ──
-#let rack-a1-web-02 = blueprint.place-component(web-02, (0.3cm, 0.3cm))
-#let rack-a1-web-01-pos = blueprint.relative-with-anchor(
-  rack-a1-web-02, (left, top), (left, bottom),
-  target-bounds: web-01.bounds, gap: (0pt, 4mm),
+// ── Rack-A1 assembly (using stack combinator) ──
+#let rack-a1-items = blueprint.stack(
+  (web-02, web-01, db-01, tor-a1,),
+  start: (0.3cm, 0.3cm), direction: "up", gap: 4mm,
 )
-#let rack-a1-web-01 = blueprint.place-component(web-01, rack-a1-web-01-pos)
-#let rack-a1-db-01-pos = blueprint.relative-with-anchor(
-  rack-a1-web-01, (left, top), (left, bottom),
-  target-bounds: db-01.bounds, gap: (0pt, 4mm),
-)
-#let rack-a1-db-01 = blueprint.place-component(db-01, rack-a1-db-01-pos)
-#let rack-a1-tor-a1-pos = blueprint.relative-with-anchor(
-  rack-a1-db-01, (left, top), (left, bottom),
-  target-bounds: tor-a1.bounds, gap: (0pt, 4mm),
-)
-#let rack-a1-tor-a1 = blueprint.place-component(tor-a1, rack-a1-tor-a1-pos)
+#let rack-a1-web-02 = rack-a1-items.at(0)
+#let rack-a1-web-01 = rack-a1-items.at(1)
+#let rack-a1-db-01 = rack-a1-items.at(2)
+#let rack-a1-tor-a1 = rack-a1-items.at(3)
 
 #let rack-a1 = blueprint.component(
   "Rack-A1",
-  (rack-a1-web-02, rack-a1-web-01, rack-a1-db-01, rack-a1-tor-a1,),
+  (..rack-a1-items,),
   border: true, border-shape: "rect", margin: 3mm,
   style: (fill: rgb("#fafafa"), stroke: 2pt + black, radius: 4pt),
 )
 
-// ── Rack-A2 assembly ──
-#let rack-a2-stor-02 = blueprint.place-component(stor-02, (0.3cm, 0.3cm))
-#let rack-a2-stor-01-pos = blueprint.relative-with-anchor(
-  rack-a2-stor-02, (left, top), (left, bottom),
-  target-bounds: stor-01.bounds, gap: (0pt, 4mm),
+// ── Rack-A2 assembly (using stack combinator) ──
+#let rack-a2-items = blueprint.stack(
+  (stor-02, stor-01, tor-a2,),
+  start: (0.3cm, 0.3cm), direction: "up", gap: 4mm,
 )
-#let rack-a2-stor-01 = blueprint.place-component(stor-01, rack-a2-stor-01-pos)
-#let rack-a2-tor-a2-pos = blueprint.relative-with-anchor(
-  rack-a2-stor-01, (left, top), (left, bottom),
-  target-bounds: tor-a2.bounds, gap: (0pt, 4mm),
-)
-#let rack-a2-tor-a2 = blueprint.place-component(tor-a2, rack-a2-tor-a2-pos)
+#let rack-a2-stor-02 = rack-a2-items.at(0)
+#let rack-a2-stor-01 = rack-a2-items.at(1)
+#let rack-a2-tor-a2 = rack-a2-items.at(2)
 
 #let rack-a2 = blueprint.component(
   "Rack-A2",
-  (rack-a2-stor-02, rack-a2-stor-01, rack-a2-tor-a2,),
+  (..rack-a2-items,),
   border: true, border-shape: "rect", margin: 3mm,
   style: (fill: rgb("#fafafa"), stroke: 2pt + black, radius: 4pt),
 )
 
-// ── Rack-B1 assembly ──
-#let rack-b1-mgmt-01 = blueprint.place-component(mgmt-01, (0.3cm, 0.3cm))
-#let rack-b1-spine-b1-pos = blueprint.relative-with-anchor(
-  rack-b1-mgmt-01, (left, top), (left, bottom),
-  target-bounds: spine-b1.bounds, gap: (0pt, 4mm),
+// ── Rack-B1 assembly (using stack combinator) ──
+#let rack-b1-items = blueprint.stack(
+  (mgmt-01, spine-b1,),
+  start: (0.3cm, 0.3cm), direction: "up", gap: 4mm,
 )
-#let rack-b1-spine-b1 = blueprint.place-component(spine-b1, rack-b1-spine-b1-pos)
+#let rack-b1-mgmt-01 = rack-b1-items.at(0)
+#let rack-b1-spine-b1 = rack-b1-items.at(1)
 
 #let rack-b1 = blueprint.component(
   "Rack-B1",
-  (rack-b1-mgmt-01, rack-b1-spine-b1,),
+  (..rack-b1-items,),
   border: true, border-shape: "rect", margin: 3mm,
   style: (fill: rgb("#fafafa"), stroke: 2pt + black, radius: 4pt),
 )
 
-// ── Rack-W1 assembly ──
-#let rack-w1-gpu-02 = blueprint.place-component(gpu-02, (0.3cm, 0.3cm))
-#let rack-w1-gpu-01-pos = blueprint.relative-with-anchor(
-  rack-w1-gpu-02, (left, top), (left, bottom),
-  target-bounds: gpu-01.bounds, gap: (0pt, 4mm),
+// ── Rack-W1 assembly (using stack combinator) ──
+#let rack-w1-items = blueprint.stack(
+  (gpu-02, gpu-01, tor-w1,),
+  start: (0.3cm, 0.3cm), direction: "up", gap: 4mm,
 )
-#let rack-w1-gpu-01 = blueprint.place-component(gpu-01, rack-w1-gpu-01-pos)
-#let rack-w1-tor-w1-pos = blueprint.relative-with-anchor(
-  rack-w1-gpu-01, (left, top), (left, bottom),
-  target-bounds: tor-w1.bounds, gap: (0pt, 4mm),
-)
-#let rack-w1-tor-w1 = blueprint.place-component(tor-w1, rack-w1-tor-w1-pos)
+#let rack-w1-gpu-02 = rack-w1-items.at(0)
+#let rack-w1-gpu-01 = rack-w1-items.at(1)
+#let rack-w1-tor-w1 = rack-w1-items.at(2)
 
 #let rack-w1 = blueprint.component(
   "Rack-W1",
-  (rack-w1-gpu-02, rack-w1-gpu-01, rack-w1-tor-w1,),
+  (..rack-w1-items,),
   border: true, border-shape: "rect", margin: 3mm,
   style: (fill: rgb("#fafafa"), stroke: 2pt + black, radius: 4pt),
 )
@@ -323,9 +307,9 @@
   blueprint.cetz.canvas({
     blueprint.draw-content(rack-a1)
   // Edges for Rack-A1
-  blueprint.connect-points(conn-abs(rack-a1-tor-a1, "dl-1"), conn-abs(rack-a1-web-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
-  blueprint.connect-points(conn-abs(rack-a1-tor-a1, "dl-2"), conn-abs(rack-a1-web-02, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
-  blueprint.connect-points(conn-abs(rack-a1-tor-a1, "dl-3"), conn-abs(rack-a1-db-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-a1-tor-a1, "dl-1"), conn-abs(rack-a1-web-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->", label: "10G"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-a1-tor-a1, "dl-2"), conn-abs(rack-a1-web-02, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->", label: "10G"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-a1-tor-a1, "dl-3"), conn-abs(rack-a1-db-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->", label: "10G"), routing: "manhattan", from-side: "bottom", to-side: "top")
   })
 }
 
@@ -334,8 +318,8 @@
   blueprint.cetz.canvas({
     blueprint.draw-content(rack-a2)
   // Edges for Rack-A2
-  blueprint.connect-points(conn-abs(rack-a2-tor-a2, "dl-1"), conn-abs(rack-a2-stor-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#ff9800"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
-  blueprint.connect-points(conn-abs(rack-a2-tor-a2, "dl-2"), conn-abs(rack-a2-stor-02, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#ff9800"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-a2-tor-a2, "dl-1"), conn-abs(rack-a2-stor-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#ff9800"), marks: "->", label: "25G"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-a2-tor-a2, "dl-2"), conn-abs(rack-a2-stor-02, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#ff9800"), marks: "->", label: "25G"), routing: "manhattan", from-side: "bottom", to-side: "top")
   })
 }
 
@@ -344,7 +328,7 @@
   blueprint.cetz.canvas({
     blueprint.draw-content(rack-b1)
   // Edges for Rack-B1
-  blueprint.connect-points(conn-abs(rack-b1-spine-b1, "dl-1"), conn-abs(rack-b1-mgmt-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-b1-spine-b1, "dl-1"), conn-abs(rack-b1-mgmt-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#66bb6a"), marks: "->", label: "10G"), routing: "manhattan", from-side: "bottom", to-side: "top")
   })
 }
 
@@ -355,8 +339,8 @@
   blueprint.cetz.canvas({
     blueprint.draw-content(rack-w1)
   // Edges for Rack-W1
-  blueprint.connect-points(conn-abs(rack-w1-tor-w1, "dl-1"), conn-abs(rack-w1-gpu-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#e53935"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
-  blueprint.connect-points(conn-abs(rack-w1-tor-w1, "dl-2"), conn-abs(rack-w1-gpu-02, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#e53935"), marks: "->"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-w1-tor-w1, "dl-1"), conn-abs(rack-w1-gpu-01, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#e53935"), marks: "->", label: "100G"), routing: "manhattan", from-side: "bottom", to-side: "top")
+  blueprint.connect-points(conn-abs(rack-w1-tor-w1, "dl-2"), conn-abs(rack-w1-gpu-02, "eth0"), style: blueprint.edge-style("", stroke: 1pt + rgb("#e53935"), marks: "->", label: "100G"), routing: "manhattan", from-side: "bottom", to-side: "top")
   })
 }
 

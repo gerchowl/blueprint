@@ -441,47 +441,46 @@ def gen_rack_assembly(rack_data):
     servers = rack_data["servers"]
 
     lines = []
-    lines.append(f"// ── {rack['name']} assembly ──")
+    lines.append(f"// ── {rack['name']} assembly (using stack combinator) ──")
 
-    # Place bottom-most server first (absolute), then stack upward
-    all_items = []  # (var_name, component_var)
+    # Collect component names: servers bottom-to-top, then switches on top
+    comp_names = []
     placed_names = []
 
-    # Servers bottom to top
-    for i, srv_data in enumerate(reversed(servers)):
+    for srv_data in reversed(servers):
         sid = sanitize(srv_data["server"]["name"])
-        var = f"{rack_sid}-{sid}"
-        all_items.append((var, sid))
-        placed_names.append(var)
+        comp_names.append(sid)
+        placed_names.append(f"{rack_sid}-items.at({len(comp_names) - 1})")
 
-    # Switches on top
     for sw in switches:
         swid = sanitize(sw["name"])
-        var = f"{rack_sid}-{swid}"
-        all_items.append((var, swid))
-        placed_names.append(var)
+        comp_names.append(swid)
+        placed_names.append(f"{rack_sid}-items.at({len(comp_names) - 1})")
 
-    if not all_items:
+    if not comp_names:
         return ""
 
-    # First item: absolute placement
-    first_var, first_comp = all_items[0]
-    lines.append(f"#let {first_var} = blueprint.place-component({first_comp}, (0.3cm, 0.3cm))")
+    # Use stack() combinator for the whole rack
+    items_list = ", ".join(comp_names)
+    lines.append(
+        f"#let {rack_sid}-items = blueprint.stack(\n"
+        f"  ({items_list},),\n"
+        f"  start: (0.3cm, 0.3cm), direction: \"up\", gap: 4mm,\n"
+        f")"
+    )
 
-    # Remaining: relative stacking
-    for i in range(1, len(all_items)):
-        var, comp = all_items[i]
-        prev_var = all_items[i - 1][0]
-        lines.append(
-            f"#let {var}-pos = blueprint.relative-with-anchor(\n"
-            f"  {prev_var}, (left, top), (left, bottom),\n"
-            f"  target-bounds: {comp}.bounds, gap: (0pt, 4mm),\n"
-            f")"
-        )
-        lines.append(f"#let {var} = blueprint.place-component({comp}, {var}-pos)")
+    # Create named variables for edge connection lookups
+    for i, srv_data in enumerate(reversed(servers)):
+        sid = sanitize(srv_data["server"]["name"])
+        lines.append(f"#let {rack_sid}-{sid} = {rack_sid}-items.at({i})")
+
+    for j, sw in enumerate(switches):
+        swid = sanitize(sw["name"])
+        idx = len(servers) + j
+        lines.append(f"#let {rack_sid}-{swid} = {rack_sid}-items.at({idx})")
 
     # Assemble rack
-    items_str = ", ".join(placed_names)
+    items_str = f"..{rack_sid}-items"
     lines.append(f"""
 #let {rack_sid} = blueprint.component(
   "{rack['name']}",
@@ -541,11 +540,12 @@ def gen_rack_edges(rack_data, conn):
             color = CABLE_COLORS.get(cable, "#333333")
             speed = link["speed_gbps"]
 
+            speed_label = f"{speed}G"
             lines.append(
                 f"  blueprint.connect-points("
                 f"conn-abs({sw_var}, \"dl-{dl_idx}\"), "
                 f"conn-abs({srv_var}, \"{src_nic_name}\"), "
-                f"style: blueprint.edge-style(\"\", stroke: 1pt + rgb(\"{color}\"), marks: \"->\"), "
+                f"style: blueprint.edge-style(\"\", stroke: 1pt + rgb(\"{color}\"), marks: \"->\", label: \"{speed_label}\"), "
                 f"routing: \"manhattan\", from-side: \"bottom\", to-side: \"top\")"
             )
 

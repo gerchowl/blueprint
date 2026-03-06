@@ -5,13 +5,23 @@
 #import "connector.typ": get-connector, calculate-connector-position
 
 /// Define an edge style (pure function, returns a dict)
-#let edge-style(name, stroke: 1pt + black, marks: "->", routing: "direct", dash: none, decorations: none) = {
+/// - name: identifier for this style
+/// - stroke: line stroke (e.g., 1pt + black)
+/// - marks: arrow marks string ("->", "<-", "<->", "-")
+/// - routing: routing algorithm ("direct", "rectangular", "manhattan", "manual")
+/// - dash: dash pattern (e.g., "dashed", "dotted") or none
+/// - label: text label to render at edge midpoint
+/// - label-size: font size for the label (default 6pt)
+/// - decorations: reserved for future use
+#let edge-style(name, stroke: 1pt + black, marks: "->", routing: "direct", dash: none, label: none, label-size: 6pt, decorations: none) = {
   (
     name: name,
     stroke: stroke,
     marks: marks,
     routing: routing,
     dash: dash,
+    label: label,
+    label-size: label-size,
     decorations: decorations,
   )
 }
@@ -208,10 +218,13 @@
 }
 
 /// Draw edge with style (produces CeTZ drawing commands)
+/// Renders line segments, arrowheads, and optional midpoint label.
 #let draw-edge(vertices, style) = {
   let stroke-style = style.at("stroke", default: 1pt + black)
   let marks = style.at("marks", default: "->")
   let dash = style.at("dash", default: none)
+  let label = style.at("label", default: none)
+  let label-size = style.at("label-size", default: 6pt)
   let mark-info = parse-marks(marks)
 
   // Build the effective stroke (with dash if specified)
@@ -235,7 +248,6 @@
 
   // Draw arrowheads
   if vertices.len() >= 2 {
-    // Extract paint color from stroke for arrowhead fill
     let arrow-color = stroke-style.paint
 
     if mark-info.end {
@@ -250,16 +262,51 @@
       draw-arrowhead(second, first, fill: arrow-color)
     }
   }
+
+  // Draw midpoint label
+  if label != none and vertices.len() >= 2 {
+    // Find the midpoint of the longest segment
+    let best-seg = 0
+    let best-len = 0pt
+    for i in range(vertices.len() - 1) {
+      let (ax, ay) = vertices.at(i)
+      let (bx, by) = vertices.at(i + 1)
+      let seg-len = calc.abs(bx - ax) + calc.abs(by - ay)
+      if seg-len > best-len {
+        best-len = seg-len
+        best-seg = i
+      }
+    }
+    let (ax, ay) = vertices.at(best-seg)
+    let (bx, by) = vertices.at(best-seg + 1)
+    let mid = ((ax + bx) / 2, (ay + by) / 2)
+    let label-color = stroke-style.paint
+    // Place label offset from the segment (above for horizontal, left for vertical)
+    let is-horizontal = calc.abs(by - ay) < 0.5pt
+    let anchor = if is-horizontal { "south" } else { "east" }
+    cetz.draw.content(
+      mid,
+      text(size: label-size, fill: label-color, weight: "medium", label),
+      anchor: anchor,
+      padding: 1.5pt,
+    )
+  }
 }
 
 /// Connect two points with an edge
-/// from-side/to-side: optional connector side hints for Manhattan routing
-#let connect-points(from, to, style: none, routing: "direct", waypoints: none, from-side: none, to-side: none) = {
+/// - from, to: (x, y) coordinate pairs
+/// - style: edge-style dict (stroke, marks, routing, label, etc.)
+/// - routing: override routing mode ("direct", "rectangular", "manhattan", "manual")
+/// - from-side/to-side: connector side hints for Manhattan routing
+/// - label: shorthand — label text rendered at edge midpoint (overrides style.label)
+#let connect-points(from, to, style: none, routing: "direct", waypoints: none, from-side: none, to-side: none, label: none) = {
   let edge-s = if style != none {
     style
   } else {
     (stroke: 1pt + black, marks: "->", routing: "direct")
   }
+  // Allow label shorthand to override style
+  if label != none { edge-s = edge-s + (label: label) }
 
   let routing-type = if routing == "auto" {
     edge-s.at("routing", default: "direct")
