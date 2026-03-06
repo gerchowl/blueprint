@@ -1,7 +1,7 @@
 /// Test: Nested components (components containing primitives)
 #import "/src/exports.typ" as blueprint
 
-#set page(width: 14cm, height: 10cm, margin: 1cm)
+#set page(width: 14cm, height: 13cm, margin: 1cm)
 
 // Create some primitives to nest
 #let inner-rect = blueprint.primitive-rect(
@@ -39,7 +39,7 @@
     radius: 0pt,
   ),
 )
-#blueprint.place-component("nested-1", (0cm, 0cm))
+#let nested-comp-1 = blueprint.place-component(nested-comp-1, (0cm, 0cm))
 #blueprint.render(nested-comp-1)
 
 // Test 2: Component with rectangles only
@@ -59,7 +59,7 @@
     radius: 5pt,
   ),
 )
-#blueprint.place-component("nested-2", (0cm, 3cm))
+#let nested-comp-2 = blueprint.place-component(nested-comp-2, (0cm, 3cm))
 #blueprint.render(nested-comp-2)
 
 // Test 3: Component with circular border containing shapes
@@ -76,10 +76,10 @@
     stroke: 2pt + orange,
   ),
 )
-#blueprint.place-component("nested-3", (0cm, 6cm))
+#let nested-comp-3 = blueprint.place-component(nested-comp-3, (0cm, 6cm))
 #blueprint.render(nested-comp-3)
 
-// Test 4: Deeply nested (component with no border containing primitives)
+// Test 4: Component without border containing primitives
 #let nested-comp-4 = blueprint.component(
   "nested-4",
   (
@@ -89,6 +89,5 @@
   border: false,
   margin: 0pt,
 )
-#blueprint.place-component("nested-4", (4cm, 6cm))
+#let nested-comp-4 = blueprint.place-component(nested-comp-4, (4cm, 6cm))
 #blueprint.render(nested-comp-4)
-

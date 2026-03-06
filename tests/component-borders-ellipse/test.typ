@@ -18,7 +18,7 @@
       stroke: stroke-width + color,
     ),
   )
-  blueprint.place-component(name, (x, y))
+  let comp = blueprint.place-component(comp, (x, y))
   blueprint.render(comp)
 }
 
@@ -49,6 +49,5 @@
     stroke: 2pt + black,
   ),
 )
-#blueprint.place-component("ellipse-no-fill", (0cm, 2.5cm))
+#let comp-no-fill = blueprint.place-component(comp-no-fill, (0cm, 2.5cm))
 #blueprint.render(comp-no-fill)
-

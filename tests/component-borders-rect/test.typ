@@ -19,7 +19,7 @@
       radius: radius,
     ),
   )
-  blueprint.place-component(name, (x, y))
+  let comp = blueprint.place-component(comp, (x, y))
   blueprint.render(comp)
 }
 
@@ -51,7 +51,7 @@
     radius: 0pt,
   ),
 )
-#blueprint.place-component("rect-no-fill", (0cm, 2.5cm))
+#let comp-no-fill = blueprint.place-component(comp-no-fill, (0cm, 2.5cm))
 #blueprint.render(comp-no-fill)
 
 // Test without border
@@ -63,6 +63,5 @@
   border: false,
   margin: 0pt,
 )
-#blueprint.place-component("rect-no-border", (3cm, 2.5cm))
+#let comp-no-border = blueprint.place-component(comp-no-border, (3cm, 2.5cm))
 #blueprint.render(comp-no-border)
-

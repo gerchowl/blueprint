@@ -3,70 +3,60 @@
 #import "utils.typ": *
 #import "style.typ": *
 
-/// Import component-registry for connector access
-#let component-registry = state("component-registry", (:))
-
-/// Connector registry
-#let connector-registry = state("connector-registry", (:))
-
-/// Create a connector
-#let connector(name, position, group: none, count: 1, group-display: "auto", group-label: none, style: none) = {
-  let conn = (
+/// Create a connector (pure function, returns a dict)
+/// Position can be explicit (x, y) coordinates, or use `side` + `offset` for
+/// border-relative positioning (resolved when the component is created).
+/// - side: "top", "bottom", "left", "right" — places connector on that border edge
+/// - offset: 0.0 to 1.0 — fraction along that edge (0 = start, 1 = end)
+#let connector(name, position, group: none, count: 1, group-display: "auto", group-label: none, style: none, side: none, offset: 0.5) = {
+  let conn-style = if style != none { style } else { default-connector-style }
+  (
     name: name,
     position: position,
     group: group,
     count: count,
     group-display: group-display,
     group-label: group-label,
-    style: style,
-    index: none, // For individual connectors in a group
+    style: conn-style,
+    index: none,
+    side: side,
+    offset: offset,
   )
+}
 
-  // Register connector
-  if group != none {
-    connector-registry.update(d => {
-      let group-key = str(group) + "-" + str(name)
-      if group-key not in d {
-        d.insert(group-key, ())
+/// Resolve border-relative connectors to absolute positions
+/// Called after border bounds are computed
+#let resolve-border-connectors(connectors, border-bounds) = {
+  let b = border-bounds
+  connectors.map(conn => {
+    if conn.at("side", default: none) != none {
+      let off = conn.at("offset", default: 0.5)
+      let pos = if conn.side == "top" {
+        (b.x + b.width * off, b.y + b.height)
+      } else if conn.side == "bottom" {
+        (b.x + b.width * off, b.y)
+      } else if conn.side == "left" {
+        (b.x, b.y + b.height * off)
+      } else if conn.side == "right" {
+        (b.x + b.width, b.y + b.height * off)
+      } else {
+        conn.position
       }
-      let group-conns = d.at(group-key)
-      group-conns.push(conn)
-      d.at(group-key) = group-conns
-      d
-    })
-  }
-
-  conn
-}
-
-/// Render connector based on display mode
-#let render-connector(connector, display-mode) = {
-  let style = connector.style
-  let pos = connector.position
-
-  if connector.group != none {
-    // Grouped connector
-    if display-mode == "high-level" or (display-mode == "auto" and connector.count > 5) {
-      render-connector-group-collapsed(connector)
-    } else if display-mode == "expanded" or connector.group-display == "expanded" {
-      render-connector-group-expanded(connector)
+      conn + (position: pos)
     } else {
-      render-connector-group-collapsed(connector)
+      conn
     }
-  } else {
-    // Individual connector
-    render-connector-individual(connector)
-  }
+  })
 }
 
-/// Render individual connector
+/// Render individual connector (returns CeTZ drawing commands)
 #let render-connector-individual(conn) = {
   let (x, y) = if type(conn.position) == array { conn.position } else { (conn.position.x, conn.position.y) }
-  let style = conn.style
-  let size = style.at("size", default: 4pt)
-  let shape = style.at("shape", default: "circle")
-  let fill = style.at("fill", default: white)
-  let stroke = style.at("stroke", default: 1pt + black)
+  let s = conn.style
+  let size = s.at("size", default: 4pt)
+  let shape = s.at("shape", default: "circle")
+  let fill = s.at("fill", default: white)
+  let stroke = s.at("stroke", default: 1pt + black)
 
   if shape == "circle" {
     cetz.draw.circle((x, y), radius: size, fill: fill, stroke: stroke)
@@ -89,13 +79,10 @@
     "[1.." + str(conn.count) + "]"
   }
 
-  // Draw bracket notation
   cetz.draw.line((x - 5pt, y), (x - 2pt, y), stroke: 1pt + black)
   cetz.draw.line((x + 2pt, y), (x + 5pt, y), stroke: 1pt + black)
   cetz.draw.line((x - 2pt, y - 2pt), (x - 2pt, y + 2pt), stroke: 1pt + black)
   cetz.draw.line((x + 2pt, y - 2pt), (x + 2pt, y + 2pt), stroke: 1pt + black)
-
-  // Label
   cetz.draw.content((x, y - 8pt), [*#label*])
 }
 
@@ -116,24 +103,33 @@
   }
 }
 
-/// Get connector by name and index from a component
-#let get-connector(component-name, connector-name, index: none) = {
-  let comp = component-registry.get().at(component-name, default: none)
-  if comp == none {
-    error("Component not found: " + str(component-name))
+/// Render connector based on display mode
+#let render-connector(connector, display-mode) = {
+  if connector.group != none {
+    if display-mode == "high-level" or (display-mode == "auto" and connector.count > 5) {
+      render-connector-group-collapsed(connector)
+    } else if display-mode == "expanded" or connector.group-display == "expanded" {
+      render-connector-group-expanded(connector)
+    } else {
+      render-connector-group-collapsed(connector)
+    }
+  } else {
+    render-connector-individual(connector)
   }
+}
 
+/// Get connector by name from a component dict
+#let get-connector(comp, connector-name, index: none) = {
   for conn in comp.connectors {
     if conn.name == connector-name {
       if index != none and conn.group != none {
-        // Return specific instance from group
         return conn + (position: calculate-connector-position(conn, index), index: index)
       } else {
         return conn
       }
     }
   }
-  error("Connector " + str(connector-name) + " not found in component " + str(component-name))
+  panic("Connector " + str(connector-name) + " not found in component " + str(comp.name))
 }
 
 /// Calculate position of a specific connector in a group
@@ -164,14 +160,8 @@
   }
 
   if not has-connectors {
-    content-bounds // If no connectors, bounds are just content bounds
+    content-bounds
   } else {
-    (
-      x: min-x,
-      y: min-y,
-      width: max-x - min-x,
-      height: max-y - min-y,
-    )
+    (x: min-x, y: min-y, width: max-x - min-x, height: max-y - min-y)
   }
 }
-
